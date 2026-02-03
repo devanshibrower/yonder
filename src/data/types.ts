@@ -1,5 +1,6 @@
 export type VelocityCategory = "swift" | "medium" | "slow";
 export type ParentObjectType = "asteroid" | "comet";
+export type HemispherePreference = "northern" | "southern" | "both";
 
 export type MeteorShower = {
   id: string;
@@ -30,6 +31,10 @@ export type MeteorShower = {
   moonPhase2026: {
     percentIlluminated: number;
     phaseName: string;
+  };
+  hemisphere: {
+    preference: HemispherePreference;
+    note: string;
   };
   description: string;
   image: string;

@@ -43,22 +43,26 @@ export function ShowerCard({ shower }: { shower: MeteorShower }) {
         className="
             flex flex-col
             items-start
-            gap-2"
+            gap-4"
       >
-        <h3
+        <h2
           className="
             text-lg 
             font-bold 
             mb-2
-            font-orbitron"
+            font-space-grotesk"
         >
           {shower.name}
-        </h3>
-        <p className="text-sm secondary-text font-orbitron">
+        </h2>
+        <p className="text-sm secondary-text font-space-grotesk">
           {shower.activePeriod.start} - {shower.activePeriod.end}, 2026
         </p>
-        <p>{shower.description}</p>
-        <div className="flex flex-col gap-2 text-sm secondary-text font-orbitron">
+        <p className="text-sm secondary-text font-georgia">
+          {shower.description}
+        </p>
+
+        {/* shower details */}
+        <div className="flex flex-col gap-2 text-sm secondary-text font-space-grotesk">
           <p className="gap-1 secondary-text">
             <span className="font-bold">Velocity: </span>
             <span>{shower.velocity.kmPerSec} km/s</span>
@@ -90,6 +94,10 @@ export function ShowerCard({ shower }: { shower: MeteorShower }) {
           <p className="text-sm gap-1 secondary-text">
             <span className="font-bold">Radiant: </span>
             <span>{shower.radiant.constellation}</span>
+          </p>
+          <p className="text-sm gap-1 secondary-text">
+            <span className="font-bold">Visibility: </span>
+            <span>{shower.hemisphere.note}</span>
           </p>
         </div>
       </div>
