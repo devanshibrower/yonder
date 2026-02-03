@@ -1,0 +1,402 @@
+{
+  "_source": "International Meteor Organization (IMO) 2026 Meteor Shower Calendar - https://www.imo.net/resources/calendar/",
+  "_lastUpdated": "2026-02-02",
+  "showers": [
+    {
+      "id": "quadrantids",
+      "code": "QUA",
+      "name": "Quadrantids",
+      "activePeriod": {
+        "start": "December 28",
+        "end": "January 12"
+      },
+      "peak": {
+        "month": 1,
+        "dayOfMonth": 4
+      },
+      "zhr": 120,
+      "velocity": {
+        "kmPerSec": 40.4,
+        "category": "medium"
+      },
+      "radiant": {
+        "ra": "15:20",
+        "dec": "+49°",
+        "constellation": "Boötes"
+      },
+      "parentObject": {
+        "name": "2003 EH1",
+        "type": "asteroid"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 99,
+        "phaseName": "full moon"
+      },
+      "description": "The Quadrantids have the potential to be the strongest shower of the year but usually fall short due to the short length of maximum activity (6 hours) and the poor weather experienced during early January. The average hourly rates one can expect under dark skies is 25. These meteors usually lack persistent trains but often produce bright fireballs. Due to the high northerly declination (celestial latitude) these meteors are not well seen from the southern hemisphere.",
+      "image": "/shower-images/quadrantids.jpg"
+    },
+    {
+      "id": "lyrids",
+      "code": "LYR",
+      "name": "Lyrids",
+      "activePeriod": {
+        "start": "April 14",
+        "end": "April 30"
+      },
+      "peak": {
+        "month": 4,
+        "dayOfMonth": 22
+      },
+      "zhr": 18,
+      "velocity": {
+        "kmPerSec": 49,
+        "category": "medium"
+      },
+      "radiant": {
+        "ra": "18:04",
+        "dec": "+34°",
+        "constellation": "Lyra"
+      },
+      "parentObject": {
+        "name": "C/1861 G1 (Thatcher)",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 27,
+        "phaseName": "waxing crescent"
+      },
+      "description": "The Lyrids are a medium strength shower that usually produces good rates for three nights centered on the maximum. These meteors also usually lack persistent trains but can produce fireballs. These meteors are best seen from the northern hemisphere where the radiant is high in the sky at dawn. Activity from this shower can be seen from the southern hemisphere, but at a lower rate.",
+      "image": "/shower-images/lyrids.jpg"
+    },
+    {
+      "id": "eta-aquariids",
+      "code": "ETA",
+      "name": "Eta Aquariids",
+      "activePeriod": {
+        "start": "April 19",
+        "end": "May 28"
+      },
+      "peak": {
+        "month": 5,
+        "dayOfMonth": 6
+      },
+      "zhr": 50,
+      "velocity": {
+        "kmPerSec": 65.4,
+        "category": "swift"
+      },
+      "radiant": {
+        "ra": "22:32",
+        "dec": "-1°",
+        "constellation": "Aquarius"
+      },
+      "parentObject": {
+        "name": "1P/Halley",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 84,
+        "phaseName": "waning gibbous"
+      },
+      "description": "The Eta Aquariids are a strong shower when viewed from the southern tropics. From the equator northward, they usually only produce medium rates of 10-30 per hour just before dawn. Activity is good for a week centered on the night of maximum activity. These are swift meteors that produce a high percentage of persistent trains, but few fireballs.",
+      "image": "/shower-images/eta-aquariids.jpg"
+    },
+    {
+      "id": "southern-delta-aquariids",
+      "code": "SDA",
+      "name": "Southern Delta Aquariids",
+      "activePeriod": {
+        "start": "July 12",
+        "end": "August 23"
+      },
+      "peak": {
+        "month": 7,
+        "dayOfMonth": 31
+      },
+      "zhr": 25,
+      "velocity": {
+        "kmPerSec": 41,
+        "category": "medium"
+      },
+      "radiant": {
+        "ra": "22:40",
+        "dec": "-16.4°",
+        "constellation": "Aquarius"
+      },
+      "parentObject": {
+        "name": "96P/Machholz",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 98,
+        "phaseName": "full moon"
+      },
+      "description": "The Delta Aquariids are another strong shower best seen from the southern tropics. North of the equator the radiant is located lower in the southern sky and therefore rates are less than seen from further south. These meteors produce good rates for a week centered on the night of maximum. These are usually faint meteors that lack both persistent trains and fireballs.",
+      "image": "/shower-images/southern-delta-aquariids.jpg"
+    },
+    {
+      "id": "alpha-capricornids",
+      "code": "CAP",
+      "name": "Alpha Capricornids",
+      "activePeriod": {
+        "start": "July 3",
+        "end": "August 15"
+      },
+      "peak": {
+        "month": 7,
+        "dayOfMonth": 31
+      },
+      "zhr": 5,
+      "velocity": {
+        "kmPerSec": 23,
+        "category": "slow"
+      },
+      "radiant": {
+        "ra": "20:28",
+        "dec": "-10°",
+        "constellation": "Capricornus"
+      },
+      "parentObject": {
+        "name": "169P/NEAT",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 98,
+        "phaseName": "full moon"
+      },
+      "description": "The Alpha Capricornids are active from July 3 through August 15 with a plateau-like maximum centered on July 31st. This shower is not very strong and rarely produces in excess of 5 shower members per hour. What is notable about this shower is the number of bright fireballs produced during its activity period. This shower is seen equally well on either side of the equator.",
+      "image": "/shower-images/alpha-capricornids.jpg"
+    },
+    {
+      "id": "perseids",
+      "code": "PER",
+      "name": "Perseids",
+      "activePeriod": {
+        "start": "July 17",
+        "end": "August 24"
+      },
+      "peak": {
+        "month": 8,
+        "dayOfMonth": 12
+      },
+      "zhr": 100,
+      "velocity": {
+        "kmPerSec": 59,
+        "category": "swift"
+      },
+      "radiant": {
+        "ra": "03:12",
+        "dec": "+58.1°",
+        "constellation": "Perseus"
+      },
+      "parentObject": {
+        "name": "109P/Swift-Tuttle",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 0,
+        "phaseName": "new moon"
+      },
+      "description": "The Perseids are the most popular meteor shower as they peak on warm August nights as seen from the northern hemisphere. Normal hourly rates seen from rural locations range from 30-50 shower members per hour at maximum. The Perseids are particles released from comet 109P/Swift-Tuttle during its numerous returns to the inner solar system. They are called Perseids since the radiant is located near the prominent constellation of Perseus the hero.",
+      "image": "/shower-images/perseids.jpg"
+    },
+    {
+      "id": "orionids",
+      "code": "ORI",
+      "name": "Orionids",
+      "activePeriod": {
+        "start": "October 2",
+        "end": "November 7"
+      },
+      "peak": {
+        "month": 10,
+        "dayOfMonth": 21
+      },
+      "zhr": 20,
+      "velocity": {
+        "kmPerSec": 66,
+        "category": "swift"
+      },
+      "radiant": {
+        "ra": "06:20",
+        "dec": "+15.8°",
+        "constellation": "Orion"
+      },
+      "parentObject": {
+        "name": "1P/Halley",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 80,
+        "phaseName": "waxing gibbous"
+      },
+      "description": "The Orionids are a medium strength shower that sometimes reaches high strength activity. In a normal year the Orionids produce 10-20 shower members at maximum. In exceptional years, such as 2006-2009, the peak rates were on par with the Perseids (50-75 per hour). Recent displays have produced low to average displays of this shower.",
+      "image": "/shower-images/orionids.jpg"
+    },
+    {
+      "id": "southern-taurids",
+      "code": "STA",
+      "name": "Southern Taurids",
+      "activePeriod": {
+        "start": "September 20",
+        "end": "November 20"
+      },
+      "peak": {
+        "month": 11,
+        "dayOfMonth": 5
+      },
+      "zhr": 5,
+      "velocity": {
+        "kmPerSec": 27,
+        "category": "slow"
+      },
+      "radiant": {
+        "ra": "03:28",
+        "dec": "+14.5°",
+        "constellation": "Taurus"
+      },
+      "parentObject": {
+        "name": "2P/Encke",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 18,
+        "phaseName": "waning crescent"
+      },
+      "description": "The Southern Taurids are rich in fireballs and are often responsible for increased number of fireball reports from September through November. This is a complex shower made up of two main components: the annual component which peaks on October 14th and the fireball swarm component which peaks on November 5th.",
+      "image": "/shower-images/southern-taurids.jpg"
+    },
+    {
+      "id": "northern-taurids",
+      "code": "NTA",
+      "name": "Northern Taurids",
+      "activePeriod": {
+        "start": "October 20",
+        "end": "December 10"
+      },
+      "peak": {
+        "month": 11,
+        "dayOfMonth": 12
+      },
+      "zhr": 5,
+      "velocity": {
+        "kmPerSec": 29,
+        "category": "slow"
+      },
+      "radiant": {
+        "ra": "03:52",
+        "dec": "+22.2°",
+        "constellation": "Taurus"
+      },
+      "parentObject": {
+        "name": "2P/Encke",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 7,
+        "phaseName": "waxing crescent"
+      },
+      "description": "This shower is much like the Southern Taurids, just active a bit later in the year. When the two showers are active simultaneously in late October and early November, there is sometimes a notable increase in the fireball activity.",
+      "image": "/shower-images/northern-taurids.jpg"
+    },
+    {
+      "id": "leonids",
+      "code": "LEO",
+      "name": "Leonids",
+      "activePeriod": {
+        "start": "November 6",
+        "end": "November 30"
+      },
+      "peak": {
+        "month": 11,
+        "dayOfMonth": 17
+      },
+      "zhr": 15,
+      "velocity": {
+        "kmPerSec": 69.7,
+        "category": "swift"
+      },
+      "radiant": {
+        "ra": "10:08",
+        "dec": "+21.8°",
+        "constellation": "Leo"
+      },
+      "parentObject": {
+        "name": "55P/Tempel-Tuttle",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 45,
+        "phaseName": "first quarter"
+      },
+      "description": "The Leonids are best known for producing meteor storms in the years of 1833, 1866, 1966, 1999, 2001 and 2002. These outbursts of meteor activity are best seen when the parent object, comet 55P/Tempel-Tuttle, is near perihelion (closest approach to the sun). Unfortunately, it appears that Earth will not encounter any dense clouds of debris until 2099.",
+      "image": "/shower-images/leonids.jpg"
+    },
+    {
+      "id": "geminids",
+      "code": "GEM",
+      "name": "Geminids",
+      "activePeriod": {
+        "start": "December 4",
+        "end": "December 17"
+      },
+      "peak": {
+        "month": 12,
+        "dayOfMonth": 14
+      },
+      "zhr": 150,
+      "velocity": {
+        "kmPerSec": 35,
+        "category": "medium"
+      },
+      "radiant": {
+        "ra": "07:28",
+        "dec": "+33°",
+        "constellation": "Gemini"
+      },
+      "parentObject": {
+        "name": "3200 Phaethon",
+        "type": "asteroid"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 21,
+        "phaseName": "waxing crescent"
+      },
+      "description": "The Geminids are usually the strongest meteor shower of the year and meteor enthusiasts are certain to circle December 13 and 14 on their calendars. This is the one major shower that provides good activity prior to midnight as the constellation of Gemini is well placed from 22:00 onward. The Geminids are often bright and intensely colored. Due to their medium-slow velocity, persistent trains are not usually seen.",
+      "image": "/shower-images/geminids.jpg"
+    },
+    {
+      "id": "ursids",
+      "code": "URS",
+      "name": "Ursids",
+      "activePeriod": {
+        "start": "December 17",
+        "end": "December 26"
+      },
+      "peak": {
+        "month": 12,
+        "dayOfMonth": 22
+      },
+      "zhr": 10,
+      "velocity": {
+        "kmPerSec": 33.1,
+        "category": "medium"
+      },
+      "radiant": {
+        "ra": "14:28",
+        "dec": "+76°",
+        "constellation": "Ursa Minor"
+      },
+      "parentObject": {
+        "name": "8P/Tuttle",
+        "type": "comet"
+      },
+      "moonPhase2026": {
+        "percentIlluminated": 94,
+        "phaseName": "waxing gibbous"
+      },
+      "description": "The Ursids are often neglected due to the fact it peaks just before Christmas and the rates are much less than the Geminids, which peaks just a week before. Observers will normally see 5-10 Ursids per hour during the late morning hours on the date of maximum activity. There have been occasional outbursts when rates have exceeded 25 per hour. This shower is strictly a northern hemisphere event.",
+      "image": "/shower-images/ursids.jpg"
+    }
+  ]
+}

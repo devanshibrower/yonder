@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: var(--color-zinc-950);
+  --background: var(--color-zinc-900);
   --foreground: var(--color-gray-200);
   --secondary-text: var(--color-gray-400);
 }

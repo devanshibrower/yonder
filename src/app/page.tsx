@@ -1,5 +1,7 @@
-import { showers } from "@/data/showers";
 import { ShowerCard } from "@/components/ui/ShowerCard";
+import showersData from "@/data/showers.json";
+import { MeteorShower } from "@/data/types";
+const showers = showersData.showers as MeteorShower[];
 
 export default function Home() {
   return (
