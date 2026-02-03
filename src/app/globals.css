@@ -10,12 +10,12 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-secondary-text: var(--secondary-text);
-  --font-inter: var(--font-inter);
-  --font-orbitron: var(--font-orbitron);
+  --font-georgia: var(--font-georgia, serif);
+  --font-space-grotesk: var(--font-space-grotesk);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), var(--font-display);
+  font-family: var(--font-georgia), serif;
 }
