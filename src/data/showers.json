@@ -29,8 +29,8 @@
         "type": "asteroid"
       },
       "moonPhase2026": {
-        "percentIlluminated": 13,
-        "phaseName": "waning crescent"
+        "percentIlluminated": 99,
+        "phaseName": "full moon"
       },
       "description": "The Quadrantids have the potential to be the strongest shower of the year but usually fall short due to the short length of maximum activity (6 hours) and the poor weather experienced during early January. The average hourly rates one can expect under dark skies is 25. These meteors usually lack persistent trains but often produce bright fireballs. Due to the high northerly declination (celestial latitude) these meteors are not well seen from the southern hemisphere.",
       "image": "/shower-images/quadrantids.jpg"
@@ -360,7 +360,7 @@
       },
       "moonPhase2026": {
         "percentIlluminated": 21,
-        "phaseName": "waning crescent"
+        "phaseName": "waxing crescent"
       },
       "description": "The Geminids are usually the strongest meteor shower of the year and meteor enthusiasts are certain to circle December 13 and 14 on their calendars. This is the one major shower that provides good activity prior to midnight as the constellation of Gemini is well placed from 22:00 onward. The Geminids are often bright and intensely colored. Due to their medium-slow velocity, persistent trains are not usually seen.",
       "image": "/shower-images/geminids.jpg"
@@ -393,7 +393,7 @@
       },
       "moonPhase2026": {
         "percentIlluminated": 94,
-        "phaseName": "waning gibbous"
+        "phaseName": "waxing gibbous"
       },
       "description": "The Ursids are often neglected due to the fact it peaks just before Christmas and the rates are much less than the Geminids, which peaks just a week before. Observers will normally see 5-10 Ursids per hour during the late morning hours on the date of maximum activity. There have been occasional outbursts when rates have exceeded 25 per hour. This shower is strictly a northern hemisphere event.",
       "image": "/shower-images/ursids.jpg"
