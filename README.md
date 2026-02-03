@@ -1,6 +1,6 @@
 # Yonder
 
-A website showcasing major meteor shower schedules.
+A website showcasing metoer showers for 2026 in an aesthetic manner. 
 
 ## Tech Stack
 
