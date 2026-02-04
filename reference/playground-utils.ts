@@ -177,7 +177,7 @@ const NEW_MOON_DAYS_2026 = [
 ];
 
 /** Phase position within a lunar cycle (0 = new moon, 0.5 = full moon, 1 = next new moon) */
-function moonPhasePosition(dayOfYear: number): number {
+export function moonPhasePosition(dayOfYear: number): number {
   let prevIdx = 0;
   for (let i = 0; i < NEW_MOON_DAYS_2026.length - 1; i++) {
     if (NEW_MOON_DAYS_2026[i + 1] > dayOfYear) { prevIdx = i; break; }

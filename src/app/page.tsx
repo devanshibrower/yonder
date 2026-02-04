@@ -1,6 +1,8 @@
 import { ShowerCard } from "@/components/ui/ShowerCard";
 import showersData from "@/data/showers.json";
 import { MeteorShower } from "@/data/types";
+import { MoonIndicator } from "@/components/ui/MoonIndicator";
+
 const showers = showersData.showers as MeteorShower[];
 
 export default function Home() {
@@ -10,10 +12,8 @@ export default function Home() {
       flex
       flex-col
       items-center
-      justify-center
       max-w-5xl
-      mx-auto
-      p-8"
+      mx-auto"
     >
       <h1
         className="
@@ -23,6 +23,11 @@ export default function Home() {
       >
         Meteor Showers
       </h1>
+      <MoonIndicator
+        percentIlluminated={25}
+        currentDay={180}
+        yearProgress={0.2}
+      />
       <div>
         {showers.map((shower) => (
           <ShowerCard shower={shower} key={shower.id} />

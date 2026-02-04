@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, Orbitron } from "next/font/google";
+import localFont from "next/font/local";
+import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+const georgia = localFont({
+  src: "../../public/fonts/Georgia.ttf",
+  variable: "--font-georgia",
 });
 
-const orbitron = Orbitron({
-  variable: "--font-orbitron",
+const space_grotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
@@ -24,7 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${orbitron.variable} antialiased`}>
+      <body
+        className={`${georgia.variable} ${space_grotesk.variable} antialiased`}
+      >
         {children}
       </body>
     </html>
