@@ -1,11 +1,15 @@
+"use client";
 import { ShowerCard } from "@/components/ui/ShowerCard";
 import showersData from "@/data/showers.json";
 import { MeteorShower } from "@/data/types";
-import { MoonIndicator } from "@/components/ui/MoonIndicator";
+import ScrollDrivenCanvas from "@/components/ui/ScrollDrivenCanvas";
+import { All_Showers, buildYearConfigs } from "@/lib/utils";
+import { useMemo } from "react";
 
 const showers = showersData.showers as MeteorShower[];
 
 export default function Home() {
+  const yearConfigs = useMemo(() => buildYearConfigs(All_Showers), []);
   return (
     <div
       className="
@@ -15,19 +19,8 @@ export default function Home() {
       max-w-5xl
       mx-auto"
     >
-      <h1
-        className="
-        text-3xl 
-        font-bold
-        mb-2"
-      >
-        Meteor Showers
-      </h1>
-      <MoonIndicator
-        percentIlluminated={25}
-        currentDay={180}
-        yearProgress={0.2}
-      />
+      <ScrollDrivenCanvas configs={yearConfigs} scrollProgress={224} />
+
       <div>
         {showers.map((shower) => (
           <ShowerCard shower={shower} key={shower.id} />
