@@ -286,7 +286,7 @@ export function monthStartDayofYear(month: number): number {
 
 export const ShowerHeight_Vh = 100;
 export const SpacerHeight_Vh = 80;
-export const MinGapForSpacer = 20;
+export const MinGapForSpacer = 5;
 
 //soecific shower pinned to its peak day
 export interface ShowerSection {

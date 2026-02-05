@@ -96,7 +96,7 @@ export class MeteorAnimation {
 
     //speed from real velocity data, mapped to pixels
     const normalizedV = (velocityKmPerSec - 20) / 55;
-    const baseSpeed = 2 + Math.pow(Math.max(0, normalizedV), 1.4) * 7;
+    const baseSpeed = 2 + Math.pow(Math.max(0, normalizedV), 1.4) * 12;
     const speed = baseSpeed * (0.85 + Math.random() * 0.3);
 
     //fireball chance - asteroids produce more fireballs
@@ -133,7 +133,7 @@ export class MeteorAnimation {
       hue: colorHue + (Math.random() - 0.5) * 40,
       life: 0,
       maxLife: 90 + Math.random() * 30,
-      saturation: isFireball ? 65 : 15 + Math.random() * 20,
+      saturation: isFireball ? 65 : 40 + Math.random() * 30,
     });
   }
   private drawMeteor(ctx: CanvasRenderingContext2D, m: Meteor) {
@@ -268,7 +268,7 @@ export class MeteorAnimation {
 
     // Spawn + update + draw meteors
     const zhr = this.config.zhr;
-    const visualRate = zhr <= 0 ? 0 : 0.15 + 2.5 * Math.pow(zhr / 150, 0.75);
+    const visualRate = zhr <= 0 ? 0 : 0.15 + 2.5 * Math.pow(zhr / 150, 0.5);
     const spawnRate = visualRate * (dt / 1000);
     this.spawnAccumulator += spawnRate;
     while (this.spawnAccumulator >= 1) {

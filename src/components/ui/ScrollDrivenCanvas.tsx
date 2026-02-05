@@ -63,7 +63,7 @@ export default function ScrollDrivenCanvas({
 
     //animation loop
     const loop = (timestamp: number) => {
-      //figure out whcih two configs to blend based on scroll position
+      //figure out which two configs to blend based on scroll position
       const p = progressRef.current;
       const maxIdx = configs.length - 1;
       const clamped = Math.max(0, Math.min(maxIdx, p));

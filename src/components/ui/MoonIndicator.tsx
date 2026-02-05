@@ -6,6 +6,7 @@ interface MoonIndicatorProps {
   percentIlluminated: number; //0 to 100
   currentDay: number; //1-365, which day of the year
   yearProgress: number; // 0 to 1, how far through the year
+  phasePosition: number;
 }
 
 //Javascript destructuring to pull out percentIlluminated prop from the props object. the : MoonIndicatorProps part is typescript saying "this object must match the shape defined in this interface."
@@ -13,12 +14,23 @@ export function MoonIndicator({
   percentIlluminated,
   currentDay,
   yearProgress,
+  phasePosition,
 }: MoonIndicatorProps) {
   //the useRef hook gives us direct reference to the canvas DOM element. Unlike document.querySelector, refs survive re-renders and are the React-approved way to access DOM elements.
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef({ day: currentDay, progress: yearProgress });
-  const propsRef = useRef({ currentDay, yearProgress, percentIlluminated });
-  propsRef.current = { currentDay, yearProgress, percentIlluminated };
+  const propsRef = useRef({
+    currentDay,
+    yearProgress,
+    percentIlluminated,
+    phasePosition,
+  });
+  propsRef.current = {
+    currentDay,
+    yearProgress,
+    percentIlluminated,
+    phasePosition,
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -30,8 +42,9 @@ export function MoonIndicator({
 
     // A dpr of 2 means 2 real pixels per css pixel in each direction. so 72css pixels becomes 144 real pixels, which is what we set here.
 
-    canvas.width = 72 * dpr;
-    canvas.height = 72 * dpr;
+    const scale = dpr * 2; //render at 2x beyond dpr for smoother edges.
+    canvas.width = 72 * scale;
+    canvas.height = 72 * scale;
 
     // Set the css display size -> how big the canvas appears on the page.
     canvas.style.width = "72px";
@@ -52,7 +65,7 @@ export function MoonIndicator({
 
       ctx.save();
       //scale all future drawing commands by dpr, so we can think in css pixels(72X72) in this case.
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
       //clear canvas before redrawing
       ctx.clearRect(0, 0, 72, 72);
@@ -64,7 +77,7 @@ export function MoonIndicator({
       const moonRadius = 16; //moon radius
 
       //halo - soft glow behind the moon, brighter when more illuminated. it is a radial gradient: bright in the center, fading to transparent at the edges.
-      const illumination = percentIlluminated / 100;
+      const illumination = target.percentIlluminated / 100;
       const halo = ctx.createRadialGradient(
         cx,
         cy,
@@ -95,7 +108,7 @@ export function MoonIndicator({
       //2. Figure out phase geometry and terminator
 
       // map 0-100 illumination to phase position for terminator ellipse. 0% = phasePos 0 (new moon), 100% = phasePos 0.5 (full moon)
-      const phasePos = (percentIlluminated / 100) * 0.5; //0.5 is the midpoint of the phase position range (0-1)
+      const phasePos = target.phasePosition; //0.5 is the midpoint of the phase position range (0-1)
 
       //is the moon waxing (getting brighter) or waning (getting dimmer)?
       //waxing (0 to 0.5): right side is lit, waning (0.5 to 1): left side is lit
