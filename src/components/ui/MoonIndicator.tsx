@@ -1,43 +1,159 @@
 "use client";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 
-//interface describes the shape of an object in typescript. It says "any props passed to this component must include percentIlluminated, and it must be a number."
-interface MoonIndicatorProps {
-  percentIlluminated: number; //0 to 100
-  currentDay: number; //1-365, which day of the year
-  yearProgress: number; // 0 to 1, how far through the year
+// Days in each month for 2026 (non-leap year)
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const MONTH_LABELS = [
+  "J",
+  "F",
+  "M",
+  "A",
+  "M",
+  "J",
+  "J",
+  "A",
+  "S",
+  "O",
+  "N",
+  "D",
+];
+
+// Calculate cumulative days at start of each month
+const MONTH_START_DAYS = DAYS_IN_MONTH.reduce<number[]>((acc, days, i) => {
+  acc.push(i === 0 ? 1 : acc[i - 1] + DAYS_IN_MONTH[i - 1]);
+  return acc;
+}, []);
+
+// Convert day of year to month name and day
+function dayToDateString(day: number): string {
+  let remaining = day;
+  for (let m = 0; m < 12; m++) {
+    if (remaining <= DAYS_IN_MONTH[m]) {
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      return `${monthNames[m]} ${remaining}`;
+    }
+    remaining -= DAYS_IN_MONTH[m];
+  }
+  return `Day ${day}`;
 }
 
-//Javascript destructuring to pull out percentIlluminated prop from the props object. the : MoonIndicatorProps part is typescript saying "this object must match the shape defined in this interface."
+interface MoonIndicatorProps {
+  percentIlluminated: number; // 0 to 100
+  currentDay: number; // 1-365, which day of the year
+  yearProgress: number; // 0 to 1, how far through the year
+  phasePosition: number;
+  onDayClick?: (day: number) => void; // Called when user clicks a day on the ring
+  size?: number; // Size in pixels, default 140
+}
+
 export function MoonIndicator({
   percentIlluminated,
   currentDay,
   yearProgress,
+  phasePosition,
+  onDayClick,
+  size = 140,
 }: MoonIndicatorProps) {
-  //the useRef hook gives us direct reference to the canvas DOM element. Unlike document.querySelector, refs survive re-renders and are the React-approved way to access DOM elements.
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef({ day: currentDay, progress: yearProgress });
-  const propsRef = useRef({ currentDay, yearProgress, percentIlluminated });
-  propsRef.current = { currentDay, yearProgress, percentIlluminated };
+  const propsRef = useRef({
+    currentDay,
+    yearProgress,
+    percentIlluminated,
+    phasePosition,
+  });
+  propsRef.current = {
+    currentDay,
+    yearProgress,
+    percentIlluminated,
+    phasePosition,
+  };
+
+  // Hover state - which day is being hovered (null if none)
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
+  const hoveredDayRef = useRef<number | null>(null);
+  hoveredDayRef.current = hoveredDay;
+
+  // Convert canvas coordinates to day of year
+  const coordsToDay = useCallback(
+    (clientX: number, clientY: number): number | null => {
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = clientX - rect.left - size / 2;
+      const y = clientY - rect.top - size / 2;
+
+      // Check if click is near the ring (between inner and outer radius)
+      const distance = Math.sqrt(x * x + y * y);
+      const ringRadius = size * 0.42; // matches drawing code
+      const tolerance = size * 0.08; // click tolerance
+
+      if (Math.abs(distance - ringRadius) > tolerance) {
+        return null; // Not on the ring
+      }
+
+      // Convert to angle, starting from 12 o'clock going clockwise
+      let angle = Math.atan2(x, -y); // Note: swapped x,y and negated y to start at top
+      if (angle < 0) angle += Math.PI * 2;
+
+      // Convert angle to day (0 to 365)
+      const progress = angle / (Math.PI * 2);
+      const day = Math.floor(progress * 365) + 1;
+
+      return Math.max(1, Math.min(365, day));
+    },
+    [size]
+  );
+
+  // Handle mouse move for hover effect
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const day = coordsToDay(e.clientX, e.clientY);
+      setHoveredDay(day);
+    },
+    [coordsToDay]
+  );
+
+  // Handle mouse leave
+  const handleMouseLeave = useCallback(() => {
+    setHoveredDay(null);
+  }, []);
+
+  // Handle click
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const day = coordsToDay(e.clientX, e.clientY);
+      if (day !== null && onDayClick) {
+        onDayClick(day);
+      }
+    },
+    [coordsToDay, onDayClick]
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    //retrieves the device pixel ratio of the screen, which is the number of real pixels that map to one css pixel. This is useful for highDPI or retina displays, so that the canvas is not blurry.
-
     const dpr = window.devicePixelRatio || 1;
-
-    // A dpr of 2 means 2 real pixels per css pixel in each direction. so 72css pixels becomes 144 real pixels, which is what we set here.
-
-    canvas.width = 72 * dpr;
-    canvas.height = 72 * dpr;
-
-    // Set the css display size -> how big the canvas appears on the page.
-    canvas.style.width = "72px";
-    canvas.style.height = "72px";
-
-    //2d drawing context. toolbox to use to draw shapes, lines, colors etc. canvas is the paper, ctx is the pens/brushes. Every drawing command goes through ctx.
+    const scale = dpr * 2; // render at 2x beyond dpr for smoother edges
+    canvas.width = size * scale;
+    canvas.height = size * scale;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -45,79 +161,57 @@ export function MoonIndicator({
     const draw = () => {
       const state = stateRef.current;
       const target = propsRef.current;
+      const hovered = hoveredDayRef.current;
 
-      //lerp toward targets
+      // Lerp toward targets
       state.day += (target.currentDay - state.day) * 0.15;
       state.progress += (target.yearProgress - state.progress) * 0.1;
 
       ctx.save();
-      //scale all future drawing commands by dpr, so we can think in css pixels(72X72) in this case.
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+      ctx.clearRect(0, 0, size, size);
 
-      //clear canvas before redrawing
-      ctx.clearRect(0, 0, 72, 72);
+      const cx = size / 2;
+      const cy = size / 2;
+      const moonRadius = size * 0.22; // Moon takes up ~44% of the indicator
+      const ringRadius = size * 0.42; // Ring is further out
 
-      // moon drawing: arc(centerX, centerY, radius, startAngle, endAngle) — center is 36,36 (half of 72), radius 16. 0 to Math.PI * 2 means a full circle. fillStyle sets the color (light gray-blue), then fill() paints it.
-
-      const cx = 36; //center x (half of 72)
-      const cy = 36; //center y (half of 72)
-      const moonRadius = 16; //moon radius
-
-      //halo - soft glow behind the moon, brighter when more illuminated. it is a radial gradient: bright in the center, fading to transparent at the edges.
-      const illumination = percentIlluminated / 100;
+      // === HALO (soft glow behind moon) ===
+      const illumination = target.percentIlluminated / 100;
       const halo = ctx.createRadialGradient(
         cx,
         cy,
-        moonRadius * 0.8, //inner radius of the gradient
+        moonRadius * 0.8,
         cx,
         cy,
-        moonRadius * 1.4 //outer radius of the gradient
+        moonRadius * 1.4
       );
-
-      halo.addColorStop(0, `rgba(200,210,255,${0.2 * illumination})`); //mulitplies 0.06 by the illumination, so a full moon glows more than a crescent.
+      halo.addColorStop(0, `rgba(200,210,255,${0.2 * illumination})`);
       halo.addColorStop(1, "rgba(200,210,255,0)");
       ctx.beginPath();
       ctx.arc(cx, cy, moonRadius * 1.4, 0, Math.PI * 2);
       ctx.fillStyle = halo;
       ctx.fill();
 
-      //1. Draw the dark base (the whole moon, dimly lit)
-
-      //beginPath() starts a new invisible outline. Canvas works in two steps:
-      // 1. Build a path (beginPath + arc/lineTo/etc) — nothing visible yet
-      // 2. Fill or stroke it — now it appears on screen
-      // Forgetting beginPath() can connect new shapes to old ones accidentally.
+      // === MOON BASE (dark side) ===
       ctx.beginPath();
       ctx.arc(cx, cy, moonRadius, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(80,90,110,0.12)"; //rgba(red, green, blue, alpha) — each color 0-255, alpha 0-1 (opacity). so 0.12 is very 12% opacity (faint).
+      ctx.fillStyle = "rgba(80,90,110,0.12)";
       ctx.fill();
 
-      //2. Figure out phase geometry and terminator
-
-      // map 0-100 illumination to phase position for terminator ellipse. 0% = phasePos 0 (new moon), 100% = phasePos 0.5 (full moon)
-      const phasePos = (percentIlluminated / 100) * 0.5; //0.5 is the midpoint of the phase position range (0-1)
-
-      //is the moon waxing (getting brighter) or waning (getting dimmer)?
-      //waxing (0 to 0.5): right side is lit, waning (0.5 to 1): left side is lit
+      // === MOON LIT PORTION (terminator geometry) ===
+      const phasePos = target.phasePosition;
       const isWaxing = phasePos < 0.5;
-
-      //the terminator is the line that separates the lit and dark parts of the moon. its drawn as an ellipse whose width varies with the phase.
       const phaseAngle = phasePos * Math.PI * 2;
-      const terminatorX = Math.cos(phaseAngle); //cosine of the phase angle gives us the x-scale of the terminator ellipse.
+      const terminatorX = Math.cos(phaseAngle);
 
-      //3. Clip the moon curcle, then draw the lit portion
-
-      //save the canvas state so we can restore after clipping
       ctx.save();
-
-      //clip everything to the moon circle - so nothing we draw leaks outside the moon shape.
       ctx.beginPath();
       ctx.arc(cx, cy, moonRadius, 0, Math.PI * 2);
       ctx.clip();
 
       ctx.beginPath();
       if (isWaxing) {
-        //waxingL lit on right, draw right semiciclex.arc
         ctx.arc(cx, cy, moonRadius, -Math.PI / 2, Math.PI / 2);
         ctx.ellipse(
           cx,
@@ -130,7 +224,6 @@ export function MoonIndicator({
           terminatorX > 0
         );
       } else {
-        //waning: lit on left, draw left semicircle
         ctx.arc(cx, cy, moonRadius, -Math.PI / 2, Math.PI / 2, true);
         ctx.ellipse(
           cx,
@@ -144,67 +237,152 @@ export function MoonIndicator({
         );
       }
       ctx.closePath();
-
-      //fill lit region with a bright color
       ctx.fillStyle = "rgba(220,225,235,0.85)";
       ctx.fill();
 
-      //4. Maria (dark patches on moon surface) and soft halo behind it
-
-      //maria - dark spots on the moon surface. small low-opacity curcles at fixed positions relative to center
-
+      // === MARIA (dark spots) ===
+      const mariaScale = moonRadius / 16; // Original was designed for radius 16
       const mariaSpots = [
         { x: -3, y: -4, r: 4.5 },
         { x: 4, y: -1, r: 3 },
         { x: -1, y: 5, r: 3.5 },
       ];
-
       for (const m of mariaSpots) {
         ctx.beginPath();
-        ctx.arc(cx + m.x, cy + m.y, m.r, 0, Math.PI * 2);
+        ctx.arc(
+          cx + m.x * mariaScale,
+          cy + m.y * mariaScale,
+          m.r * mariaScale,
+          0,
+          Math.PI * 2
+        );
         ctx.fillStyle = "rgba(100,105,120,0.10)";
         ctx.fill();
       }
-
-      //Restore canvas state (removes the clipping)
       ctx.restore();
 
-      // year progress ring
-
-      const ringRadius = 30; //bigger than than the moon
-
-      //faint full circle outline (the track)
+      // === YEAR PROGRESS RING (background track) ===
       ctx.beginPath();
       ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.08)";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = size * 0.025;
       ctx.stroke();
 
-      //progress arc from 12 o'clock
+      // === DAY TICK MARKS ===
+      const tickInner = ringRadius - size * 0.02;
+      const tickOuterSmall = ringRadius + size * 0.015;
+      const tickOuterMonth = ringRadius + size * 0.035;
 
-      //-Math.PI / 2 — angles in canvas start at the 3 o'clock position and go clockwise. Subtracting π/2 (90°) shifts the start to 12 o'clock, which feels natural for a progress indicator.
+      // Draw 365 small ticks
+      for (let day = 1; day <= 365; day++) {
+        const angle = -Math.PI / 2 + (day / 365) * Math.PI * 2;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+
+        // Check if this is a month boundary
+        const isMonthStart = MONTH_START_DAYS.includes(day);
+        const isHovered = hovered === day;
+
+        // Determine tick style
+        let tickOuter: number;
+        let tickWidth: number;
+        let tickAlpha: number;
+
+        if (isMonthStart) {
+          tickOuter = tickOuterMonth;
+          tickWidth = 1.5;
+          tickAlpha = 0.4;
+        } else if (day % 7 === 0) {
+          // Weekly tick (slightly more visible)
+          tickOuter = tickOuterSmall;
+          tickWidth = 0.5;
+          tickAlpha = 0.15;
+        } else {
+          // Daily tick
+          tickOuter = tickOuterSmall;
+          tickWidth = 0.5;
+          tickAlpha = 0.08;
+        }
+
+        // Highlight hovered day
+        if (isHovered) {
+          tickOuter = tickOuterMonth;
+          tickWidth = 2;
+          tickAlpha = 0.8;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(cx + cos * tickInner, cy + sin * tickInner);
+        ctx.lineTo(cx + cos * tickOuter, cy + sin * tickOuter);
+        ctx.strokeStyle = `rgba(255,255,255,${tickAlpha})`;
+        ctx.lineWidth = tickWidth;
+        ctx.stroke();
+      }
+
+      // === MONTH LABELS ===
+      const labelRadius = ringRadius + size * 0.07;
+      ctx.font = `${size * 0.06}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+
+      for (let m = 0; m < 12; m++) {
+        // Position label at middle of month
+        const midDay = MONTH_START_DAYS[m] + DAYS_IN_MONTH[m] / 2;
+        const angle = -Math.PI / 2 + (midDay / 365) * Math.PI * 2;
+        const lx = cx + Math.cos(angle) * labelRadius;
+        const ly = cy + Math.sin(angle) * labelRadius;
+        ctx.fillText(MONTH_LABELS[m], lx, ly);
+      }
+
+      // === PROGRESS ARC ===
       const startAngle = -Math.PI / 2;
-
-      //Math.PI * 2 * yearProgress — yearProgress is 0 to 1, so we multiply by 2PI to get the full circle.
       const endAngle = startAngle + Math.PI * 2 * state.progress;
-
       ctx.beginPath();
       ctx.arc(cx, cy, ringRadius, startAngle, endAngle);
-      ctx.strokeStyle = "rgba(255,255,255,0.2)";
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(255,255,255,0.25)";
+      ctx.lineWidth = size * 0.02;
+      ctx.lineCap = "round";
       ctx.stroke();
 
-      // Small dot at current position on the ring.
-      // cos and sin convert an angle into x,y coordinates on a circle: x = centerX + cos(angle) * radius, y = centerY + sin(angle) * radius
-      // Think of it like a clock hand — give it the angle, and cos/sin
-      // tell you the x,y of the tip. This same pattern appears everywhere you nede to place something on a circular path.
-
+      // === CURRENT DAY DOT ===
       const dotX = cx + Math.cos(endAngle) * ringRadius;
       const dotY = cy + Math.sin(endAngle) * ringRadius;
       ctx.beginPath();
-      ctx.arc(dotX, dotY, 2, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.arc(dotX, dotY, size * 0.025, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
       ctx.fill();
+
+      // === HOVER TOOLTIP ===
+      if (hovered !== null) {
+        const hoverAngle = -Math.PI / 2 + (hovered / 365) * Math.PI * 2;
+        const tooltipRadius = ringRadius - size * 0.12;
+        const tx = cx + Math.cos(hoverAngle) * tooltipRadius;
+        const ty = cy + Math.sin(hoverAngle) * tooltipRadius;
+
+        const dateStr = dayToDateString(hovered);
+        ctx.font = `bold ${size * 0.07}px system-ui, sans-serif`;
+        const textWidth = ctx.measureText(dateStr).width;
+
+        // Tooltip background
+        const padding = size * 0.02;
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.beginPath();
+        ctx.roundRect(
+          tx - textWidth / 2 - padding,
+          ty - size * 0.04 - padding,
+          textWidth + padding * 2,
+          size * 0.08 + padding,
+          3
+        );
+        ctx.fill();
+
+        // Tooltip text
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(dateStr, tx, ty);
+      }
 
       ctx.restore();
       raf = requestAnimationFrame(draw);
@@ -212,7 +390,15 @@ export function MoonIndicator({
 
     let raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [size]);
 
-  return <canvas ref={canvasRef}></canvas>;
+  return (
+    <canvas
+      ref={canvasRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
+      style={{ cursor: onDayClick ? "pointer" : "default" }}
+    />
+  );
 }

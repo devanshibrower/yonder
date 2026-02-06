@@ -270,10 +270,94 @@ export function moonPhaseNameForDay(dayOfYear: number): string {
 //we need to import the meteorshower type so TypeScript knows the shape of shower data. Added to the top of this file.
 
 //peak day of the year for a shower. Same logic as parseDatetoDay, but uses the numeric month/day from the shower data instead of parsing a string.
-function showerPeakDay(shower: MeteorShower): number {
+export function showerPeakDay(shower: MeteorShower): number {
   let doy = shower.peak.dayOfMonth;
   for (let m = 1; m < shower.peak.month; m++) doy = doy + DaysInMonth[m];
   return doy;
+}
+
+export function monthStartDayofYear(month: number): number {
+  let d = 1;
+  for (let m = 1; m < month; m++) {
+    d = d + DaysInMonth[m];
+  }
+  return d;
+}
+
+export const ShowerHeight_Vh = 100;
+export const SpacerHeight_Vh = 80;
+export const MinGapForSpacer = 5;
+
+//soecific shower pinned to its peak day
+export interface ShowerSection {
+  type: "shower";
+  shower: MeteorShower;
+  peakDay: number;
+  heightVh: number;
+}
+
+//this section covers a range of days between showers, labeled with a month name.
+export interface SpacerSection {
+  type: "spacer";
+  startDay: number;
+  endDay: number;
+  label: string;
+  count: number;
+  heightVh: number;
+}
+
+//could be either one of the sections mentioned above
+export type LayoutSection = ShowerSection | SpacerSection;
+
+//this function will take all 12 showers (sorted by peak date) and produce the array of sections on the website, alternating spacers and showers.
+export function buildLayout(showers: MeteorShower[]): LayoutSection[] {
+  //layout is the array we will return
+  const layout: LayoutSection[] = [];
+  //this maps the peak day for every shower, giving an array of peak day numbers like [3, 112,...etc]
+  const peakDays = showers.map(showerPeakDay);
+
+  //addspacer function to fill in spacer section from one to another. For example, if fromDay is 32 (Feb 1) and toDay is 112 (Apr 22), it would create spacers for February, March, and part of April.
+  function addSpacers(fromDay: number, toDay: number) {
+    const totalGap = toDay - fromDay;
+    if (totalGap <= MinGapForSpacer) return; // if gap is too small, skip this function
+
+    const startMonth = dayToMonth(fromDay);
+    const endMonth = dayToMonth(toDay);
+
+    for (let m = startMonth; m <= endMonth; m++) {
+      const mStart = monthStartDayofYear(m);
+      const mEnd = mStart + DaysInMonth[m];
+      const spacerStart = Math.max(fromDay, mStart);
+      const spacerEnd = Math.min(toDay, mEnd);
+      const days = spacerEnd - spacerStart;
+
+      if (days < 5) continue;
+
+      const count = Math.max(1, Math.round(days / 30));
+      layout.push({
+        type: "spacer",
+        startDay: spacerStart,
+        endDay: spacerEnd,
+        label: MonthNames[m],
+        count,
+        heightVh: SpacerHeight_Vh * count,
+      });
+    }
+  }
+
+  for (let i = 0; i < showers.length; i++) {
+    const prevDay = i === 0 ? 1 : peakDays[i - 1];
+    addSpacers(prevDay, peakDays[i]);
+
+    layout.push({
+      type: "shower",
+      shower: showers[i],
+      peakDay: peakDays[i],
+      heightVh: ShowerHeight_Vh,
+    });
+  }
+  addSpacers(peakDays[peakDays.length - 1], 365);
+  return layout;
 }
 
 //active period start/end as day of year. Uses parseDatetoDay to convert string dates from JSON.
