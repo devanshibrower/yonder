@@ -251,120 +251,30 @@ export default function LunarCalendar() {
   const [inputValue, setInputValue] = useState("");
   const [hasError, setHasError] = useState(false);
 
+  // Animation refs
+  const animatedPhaseRef = useRef<number>(getMoonPhase(dayOfYear));
+  const targetPhaseRef = useRef<number>(getMoonPhase(dayOfYear));
+  const animatedArcRef = useRef<number>(dayOfYear);
+  const rafRef = useRef<number>(0);
+  const selectedDayRef = useRef<number>(dayOfYear);
+  selectedDayRef.current = selectedDay;
+  const hoveredDayRef = useRef<number | null>(null);
+  hoveredDayRef.current = hoveredDay;
+
   //------------------------EFFECTS----------------------------------------
 
+  // Effect A — Update target phase when display day changes
+  useEffect(() => {
+    const displayDay = hoveredDay ?? selectedDay;
+    targetPhaseRef.current = getMoonPhase(displayDay);
+  }, [hoveredDay, selectedDay]);
+
+  // Effect B — Event listeners (mount only)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    //grab the tool to draw
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    //calculate display day, if there is a hovered day, show that, otherwise show selected day
-    const displayDay = hoveredDay ?? selectedDay;
-
-    //do this so the drawing doesnt look jagged
-    const dpr = window.devicePixelRatio || 1; // if no dpr, 1 canvas px = 1 screen px
-    canvas.width = CANVAS_SIZE * dpr;
-    canvas.height = CANVAS_SIZE * dpr;
-    canvas.style.width = `${CANVAS_SIZE}px`;
-    canvas.style.height = `${CANVAS_SIZE}px`;
-    ctx.scale(dpr, dpr);
-
-    //start drawing
-    const phaseValue = getMoonPhase(displayDay);
-    const illumination = Math.cos(phaseValue * 2 * Math.PI);
-    const smoothEllipseRadius = Math.abs(illumination) * MOON_RADIUS;
-    const side = phaseValue <= 0.5 ? "right" : "left";
-    const carve = illumination > 0;
-
-    drawMoon(
-      ctx,
-      CENTER,
-      CENTER,
-      MOON_RADIUS,
-      side,
-      smoothEllipseRadius,
-      carve,
-    );
-
-    // Draw base track ring
-    ctx.beginPath();
-    ctx.arc(CENTER, CENTER, RING_RADIUS, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(75, 75, 75, 0.2)";
-    ctx.lineWidth = 12;
-    ctx.stroke();
-
-    // Draw progress arc on top
-    ctx.beginPath();
-    const startAngle = -Math.PI / 2;
-    const endAngle = -Math.PI / 2 + (selectedDay / 365) * Math.PI * 2;
-    ctx.arc(CENTER, CENTER, RING_RADIUS, startAngle, endAngle);
-    ctx.strokeStyle = "rgba(244, 244, 245, 0.15)";
-    ctx.lineWidth = 12;
-    ctx.lineCap = "round";
-    ctx.stroke();
-
-    //-----markers on outer ring-----
-    for (let day = 1; day <= 365; day++) {
-      //calculate length of marker depending on day of year
-      ctx.beginPath();
-      ctx.arc(CENTER, CENTER, RING_RADIUS, 0, Math.PI * 2);
-      const isHovered = day === hoveredDay;
-      const isMonthStart = MonthStartDates.includes(day);
-      const isInProgress = day <= selectedDay; //is this day within the progress range
-      const tickInner = isMonthStart
-        ? RING_RADIUS - 4
-        : RING_RADIUS - 2; // longer markers for month starts
-      const tickOuter = isMonthStart
-        ? RING_RADIUS + 4
-        : RING_RADIUS + 2; // longer markers for month starts
-
-      //calculate position of marker on the ring (angle)
-      const angle = -Math.PI / 2 + ((day - 1) / 365) * (Math.PI * 2);
-
-      //calculate inner and outer points of the marker
-      const innerX = CENTER + Math.cos(angle) * tickInner;
-      const innerY = CENTER + Math.sin(angle) * tickInner;
-      const outerX = CENTER + Math.cos(angle) * tickOuter;
-      const outerY = CENTER + Math.sin(angle) * tickOuter;
-
-      //draw markers with appropriate styling
-      ctx.beginPath();
-      ctx.moveTo(innerX, innerY);
-      ctx.lineTo(outerX, outerY);
-      ctx.lineWidth = 0.5;
-      ctx.strokeStyle = isHovered
-        ? colors.primaryMarkers
-        : isInProgress
-          ? colors.primaryMarkers
-          : isMonthStart
-            ? colors.secondaryMarkers
-            : colors.defaultMarkers;
-      ctx.stroke();
-    }
-
-    // Draw month labels
-    ctx.font = "8px sans-serif";
-    ctx.fillStyle = colors.secondaryMarkers;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    monthNames.forEach((name, i) => {
-      const midDay =
-        (MonthStartDates[i] + MonthStartDates[i + 1]) / 2;
-      const angle = -Math.PI / 2 + ((midDay - 1) / 365) * Math.PI * 2;
-      const labelRadius = RING_RADIUS + 18;
-      const x = CENTER + Math.cos(angle) * labelRadius;
-      const y = CENTER + Math.sin(angle) * labelRadius;
-      ctx.fillText(name.toUpperCase(), x, y);
-    });
-
-    //-----------mouse interaction-----------//
-
     const handleMouseMove = (event: MouseEvent) => {
-      //mouse position relative to canvas, mouse doesnt have hover states so we need to calculate it ourselves
       const canvasRect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - canvasRect.left - CENTER;
       const mouseY = event.clientY - canvasRect.top - CENTER;
@@ -374,11 +284,10 @@ export default function LunarCalendar() {
       if (mouseAngle < 0) mouseAngle += Math.PI * 2;
       const rawDay =
         Math.round((mouseAngle / (Math.PI * 2)) * 365) + 1;
-      const hoveredDay = rawDay > 365 ? 1 : rawDay;
-      setHoveredDay(hoveredDay);
+      const day = rawDay > 365 ? 1 : rawDay;
+      setHoveredDay(day);
     };
 
-    //click event to set selected day and update moon phase
     const handleClick = (event: MouseEvent) => {
       const canvasRect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - canvasRect.left - CENTER;
@@ -390,22 +299,157 @@ export default function LunarCalendar() {
         Math.round((mouseAngle / (Math.PI * 2)) * 365) + 1;
       const clickedDay = rawDay > 365 ? 1 : rawDay;
       setSelectedDay(clickedDay);
+      canvas.focus();
     };
 
-    //add mouse move event listener to canvas to track mouse position and update hovered day state
     const handleMouseLeave = () => setHoveredDay(null);
 
     canvas.addEventListener("mousemove", handleMouseMove);
     canvas.addEventListener("click", handleClick);
     canvas.addEventListener("mouseleave", handleMouseLeave);
 
-    //cleanup function to remove event listener when component unmounts or dependencies change
     return () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
       canvas.removeEventListener("click", handleClick);
     };
-  }, [hoveredDay, selectedDay]);
+  }, []);
+
+  // Effect C — RAF animation loop (mount only)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // DPR setup once
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = CANVAS_SIZE * dpr;
+    canvas.height = CANVAS_SIZE * dpr;
+    canvas.style.width = `${CANVAS_SIZE}px`;
+    canvas.style.height = `${CANVAS_SIZE}px`;
+    ctx.scale(dpr, dpr);
+
+    const draw = () => {
+      const target = targetPhaseRef.current;
+      let current = animatedPhaseRef.current;
+
+      // Lerp with shortest-path wrapping (phase is cyclic 0-1)
+      let diff = target - current;
+      if (diff > 0.5) diff -= 1;
+      if (diff < -0.5) diff += 1;
+      current += diff * 0.12;
+      // Wrap back to 0-1 range
+      if (current < 0) current += 1;
+      if (current >= 1) current -= 1;
+      animatedPhaseRef.current = current;
+
+      // Lerp the progress arc toward selected day
+      const arcTarget = selectedDayRef.current;
+      animatedArcRef.current +=
+        (arcTarget - animatedArcRef.current) * 0.12;
+
+      // Read refs for instant values
+      const hovered = hoveredDayRef.current;
+      const animatedArc = animatedArcRef.current;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+      // Draw moon using animated phase
+      const illumination = Math.cos(current * 2 * Math.PI);
+      const smoothEllipseRadius =
+        Math.abs(illumination) * MOON_RADIUS;
+      const side = current <= 0.5 ? "right" : "left";
+      const carve = illumination > 0;
+
+      drawMoon(
+        ctx,
+        CENTER,
+        CENTER,
+        MOON_RADIUS,
+        side,
+        smoothEllipseRadius,
+        carve,
+      );
+
+      // Draw base track ring
+      ctx.beginPath();
+      ctx.arc(CENTER, CENTER, RING_RADIUS, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(75, 75, 75, 0.2)";
+      ctx.lineWidth = 12;
+      ctx.stroke();
+
+      // Draw progress arc on top (animated)
+      ctx.beginPath();
+      const startAngle = -Math.PI / 2;
+      const endAngle =
+        -Math.PI / 2 + (animatedArc / 365) * Math.PI * 2;
+      ctx.arc(CENTER, CENTER, RING_RADIUS, startAngle, endAngle);
+      ctx.strokeStyle = "rgba(244, 244, 245, 0.15)";
+      ctx.lineWidth = 12;
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      // Markers on outer ring
+      const arcDay = Math.round(animatedArc);
+      for (let day = 1; day <= 365; day++) {
+        const isHovered = day === hovered;
+        const isMonthStart = MonthStartDates.includes(day);
+        const isInProgress = day <= arcDay;
+        const tickInner = isMonthStart
+          ? RING_RADIUS - 4
+          : RING_RADIUS - 2;
+        const tickOuter = isMonthStart
+          ? RING_RADIUS + 4
+          : RING_RADIUS + 2;
+
+        const angle =
+          -Math.PI / 2 + ((day - 1) / 365) * (Math.PI * 2);
+
+        const innerX = CENTER + Math.cos(angle) * tickInner;
+        const innerY = CENTER + Math.sin(angle) * tickInner;
+        const outerX = CENTER + Math.cos(angle) * tickOuter;
+        const outerY = CENTER + Math.sin(angle) * tickOuter;
+
+        ctx.beginPath();
+        ctx.moveTo(innerX, innerY);
+        ctx.lineTo(outerX, outerY);
+        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = isHovered
+          ? colors.primaryMarkers
+          : isInProgress
+            ? colors.primaryMarkers
+            : isMonthStart
+              ? colors.secondaryMarkers
+              : colors.defaultMarkers;
+        ctx.stroke();
+      }
+
+      // Draw month labels
+      ctx.font = "8px sans-serif";
+      ctx.fillStyle = colors.secondaryMarkers;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      monthNames.forEach((name, i) => {
+        const midDay =
+          (MonthStartDates[i] + MonthStartDates[i + 1]) / 2;
+        const angle =
+          -Math.PI / 2 + ((midDay - 1) / 365) * Math.PI * 2;
+        const labelRadius = RING_RADIUS + 18;
+        const x = CENTER + Math.cos(angle) * labelRadius;
+        const y = CENTER + Math.sin(angle) * labelRadius;
+        ctx.fillText(name.toUpperCase(), x, y);
+      });
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    rafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
 
   const displayDay = hoveredDay ?? selectedDay;
   const displayPhase = getMoonPhase(displayDay);
@@ -420,6 +464,19 @@ export default function LunarCalendar() {
           ref={canvasRef}
           width={CANVAS_SIZE}
           height={CANVAS_SIZE}
+          tabIndex={0}
+          className="outline-none"
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+              e.preventDefault();
+              setHoveredDay(null);
+              setSelectedDay((d) => (d >= 365 ? 1 : d + 1));
+            } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+              e.preventDefault();
+              setHoveredDay(null);
+              setSelectedDay((d) => (d <= 1 ? 365 : d - 1));
+            }
+          }}
         />
       </div>
       <div className="text-center">
@@ -437,7 +494,21 @@ export default function LunarCalendar() {
             setHasError(false);
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setSelectedDay((d) => {
+                const next = d >= 365 ? 1 : d + 1;
+                setInputValue(daytoDateString(next));
+                return next;
+              });
+            } else if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setSelectedDay((d) => {
+                const next = d <= 1 ? 365 : d - 1;
+                setInputValue(daytoDateString(next));
+                return next;
+              });
+            } else if (e.key === "Enter") {
               const parsed = parseDateInput(inputValue);
               if (parsed) {
                 setSelectedDay(parsed);
@@ -447,8 +518,7 @@ export default function LunarCalendar() {
               } else {
                 setHasError(true);
               }
-            }
-            if (e.key === "Escape") {
+            } else if (e.key === "Escape") {
               setIsEditing(false);
               setHasError(false);
               inputRef.current?.blur();
@@ -471,13 +541,16 @@ export default function LunarCalendar() {
           {displayPhaseName} ·{" "}
           {Math.round(getIllumination(displayPhase) * 100)}%
         </div>
+        <div className="font-sans text-[10px] text-zinc-600">
+          ↑↓ to navigate days
+        </div>
         <button
           onClick={() => setSelectedDay(dayOfYear)}
           disabled={selectedDay === dayOfYear}
-          className={`mt-2 rounded-sm border border-zinc-700 px-3 py-0.5 font-sans text-xs transition-opacity ${
+          className={`mt-2 rounded-full border px-3 py-0.5 font-sans text-[10px] tracking-wide transition-all duration-300 ${
             selectedDay === dayOfYear
-              ? "cursor-default opacity-0"
-              : "cursor-pointer text-zinc-500 opacity-100 hover:border-zinc-400 hover:text-zinc-200"
+              ? "cursor-default border-transparent opacity-0"
+              : "cursor-pointer border-zinc-700/50 text-zinc-500 opacity-100 hover:border-zinc-500/60 hover:text-zinc-300 hover:shadow-[0_0_8px_rgba(244,244,245,0.06)]"
           }`}
         >
           Today
