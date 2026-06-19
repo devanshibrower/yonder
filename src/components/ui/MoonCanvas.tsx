@@ -56,10 +56,10 @@ const moonPhases = {
 } as const;
 
 //canvas consttants
-const CANVAS_SIZE = 240;
+const CANVAS_SIZE = 360;
 const CENTER = CANVAS_SIZE / 2;
-const MOON_RADIUS = 36;
-const RING_RADIUS = 74;
+const MOON_RADIUS = 54;
+const RING_RADIUS = 111;
 
 //--Month start dates
 const MonthStartDates = [
@@ -293,7 +293,7 @@ export default function LunarCalendar() {
     ctx.beginPath();
     ctx.arc(CENTER, CENTER, RING_RADIUS, 0, Math.PI * 2);
     ctx.strokeStyle = "rgba(75, 75, 75, 0.2)";
-    ctx.lineWidth = 12;
+    ctx.lineWidth = 18;
     ctx.stroke();
 
     // Draw progress arc on top
@@ -302,7 +302,7 @@ export default function LunarCalendar() {
     const endAngle = -Math.PI / 2 + (selectedDay / 365) * Math.PI * 2;
     ctx.arc(CENTER, CENTER, RING_RADIUS, startAngle, endAngle);
     ctx.strokeStyle = "rgba(244, 244, 245, 0.15)";
-    ctx.lineWidth = 12;
+    ctx.lineWidth = 18;
     ctx.lineCap = "round";
     ctx.stroke();
 
@@ -315,11 +315,11 @@ export default function LunarCalendar() {
       const isMonthStart = MonthStartDates.includes(day);
       const isInProgress = day <= selectedDay; //is this day within the progress range
       const tickInner = isMonthStart
-        ? RING_RADIUS - 4
-        : RING_RADIUS - 2; // longer markers for month starts
+        ? RING_RADIUS - 6
+        : RING_RADIUS - 3; // longer markers for month starts
       const tickOuter = isMonthStart
-        ? RING_RADIUS + 4
-        : RING_RADIUS + 2; // longer markers for month starts
+        ? RING_RADIUS + 6
+        : RING_RADIUS + 3; // longer markers for month starts
 
       //calculate position of marker on the ring (angle)
       const angle = -Math.PI / 2 + ((day - 1) / 365) * (Math.PI * 2);
@@ -346,7 +346,7 @@ export default function LunarCalendar() {
     }
 
     // Draw month labels
-    ctx.font = "8px sans-serif";
+    ctx.font = "12px sans-serif";
     ctx.fillStyle = colors.secondaryMarkers;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -355,7 +355,7 @@ export default function LunarCalendar() {
       const midDay =
         (MonthStartDates[i] + MonthStartDates[i + 1]) / 2;
       const angle = -Math.PI / 2 + ((midDay - 1) / 365) * Math.PI * 2;
-      const labelRadius = RING_RADIUS + 18;
+      const labelRadius = RING_RADIUS + 27;
       const x = CENTER + Math.cos(angle) * labelRadius;
       const y = CENTER + Math.sin(angle) * labelRadius;
       ctx.fillText(name.toUpperCase(), x, y);
@@ -463,18 +463,18 @@ export default function LunarCalendar() {
             }
           }}
           placeholder="Mar 15 or 3/15"
-          className={`w-24 border-0 bg-transparent text-center font-sans text-xs outline-none ${
+          className={`w-36 border-0 bg-transparent text-center font-sans text-lg outline-none ${
             hasError ? "text-red-500" : "text-zinc-200"
           } ${isEditing ? "border-b border-zinc-600" : "border-b border-transparent"}`}
         />
-        <div className="font-sans text-xs text-zinc-500">
+        <div className="mt-1 font-sans text-lg text-zinc-500">
           {displayPhaseName} ·{" "}
           {Math.round(getIllumination(displayPhase) * 100)}%
         </div>
         <button
           onClick={() => setSelectedDay(dayOfYear)}
           disabled={selectedDay === dayOfYear}
-          className={`mt-2 rounded-sm border border-zinc-700 px-3 py-0.5 font-sans text-xs transition-opacity ${
+          className={`mt-3 min-h-11 rounded-lg border border-zinc-700 px-5 py-1 font-sans text-lg transition-opacity ${
             selectedDay === dayOfYear
               ? "cursor-default opacity-0"
               : "cursor-pointer text-zinc-500 opacity-100 hover:border-zinc-400 hover:text-zinc-200"
