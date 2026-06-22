@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Moon iterations — what to keep from each</title>
+    <style>
+      :root {
+        --bg: #18181b;
+        --panel: #1f1f23;
+        --border: #27272a;
+        --text: #e4e4e7;
+        --muted: #a1a1aa;
+        --faint: #71717a;
+        --good: #4ade80;
+        --bad: #f87171;
+        --accent: #f4f4f5;
+        --code-bg: #0f0f11;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, sans-serif;
+        padding: 64px 24px 120px;
+      }
+      .wrap { max-width: 860px; margin: 0 auto; }
+      h1 { font-size: 28px; letter-spacing: -0.02em; margin: 0 0 6px; }
+      .sub { color: var(--muted); margin: 0 0 24px; }
+
+      .links { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 36px; }
+      .links a {
+        text-decoration: none;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 14px;
+        color: var(--text);
+        font-size: 13px;
+        background: var(--panel);
+        transition: border-color 0.15s;
+      }
+      .links a:hover { border-color: var(--faint); }
+      .links a .r { color: var(--faint); font-family: ui-monospace, monospace; font-size: 11px; margin-left: 6px; }
+
+      .feature {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--panel);
+        padding: 24px 24px 28px;
+        margin-bottom: 28px;
+      }
+      .feature h2 {
+        font-size: 18px;
+        margin: 0 0 4px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .num {
+        font-size: 12px;
+        color: var(--faint);
+        font-variant-numeric: tabular-nums;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 2px 9px;
+      }
+      .verdict {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        padding: 2px 9px;
+        border-radius: 999px;
+      }
+      .verdict.blog { color: var(--good); border: 1px solid rgba(74,222,128,0.35); }
+      .verdict.canvas { color: #7dd3fc; border: 1px solid rgba(125,211,252,0.35); }
+      .feature > p { color: var(--muted); margin: 8px 0 18px; }
+
+      .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      @media (max-width: 680px) { .cols { grid-template-columns: 1fr; } }
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--code-bg);
+      }
+      .card .hd {
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .card.win .hd { color: var(--good); }
+      .card.lose .hd { color: var(--bad); }
+      .card .hd .file { color: var(--faint); font-weight: 400; font-size: 11px; }
+      pre {
+        margin: 0;
+        padding: 12px 14px;
+        overflow-x: auto;
+        font: 12.5px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+        color: #d4d4d8;
+      }
+      .tag { color: var(--faint); }
+      .hl { color: var(--good); }
+      .hl-bad { color: var(--bad); }
+
+      .viz { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+      .viz figure { margin: 0; text-align: center; }
+      .viz figcaption { font-size: 12px; color: var(--faint); margin-top: 6px; }
+      .why {
+        margin-top: 18px;
+        font-size: 13.5px;
+        color: var(--muted);
+        border-left: 2px solid var(--border);
+        padding-left: 14px;
+      }
+      .why b { color: var(--text); }
+
+      .summary { border: 1px solid var(--border); border-radius: 14px; padding: 8px 24px; margin-top: 8px; background: var(--panel); }
+      .summary table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      .summary td, .summary th { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--border); }
+      .summary th { color: var(--faint); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
+      .summary tr:last-child td { border-bottom: none; }
+      .pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+      .pill.blog { color: var(--good); background: rgba(74,222,128,0.12); }
+      .pill.canvas { color: #7dd3fc; background: rgba(125,211,252,0.12); }
+
+      h3.kicker { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); margin: 44px 0 14px; }
+      code.inl { background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; font-size: 12.5px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Moon iterations — what to keep from each</h1>
+      <p class="sub">Comparing the inline <code class="inl">src/app/blog/moon/page.tsx</code> against the canonical <code class="inl">src/components/ui/MoonCanvas.tsx</code> (rendered at <code class="inl">/</code> and <code class="inl">/experiments/moon</code>). Verdicts reflect decisions made.</p>
+
+      <div class="links">
+        <a href="/">▶ MoonCanvas <span class="r">/</span></a>
+        <a href="/experiments/moon">▶ MoonCanvas <span class="r">/experiments/moon</span></a>
+        <a href="/blog/moon">▶ blog/moon <span class="r">/blog/moon</span></a>
+        <a href="/experiments">▶ All experiments <span class="r">/experiments</span></a>
+      </div>
+
+      <!-- 1 -->
+      <section class="feature">
+        <h2><span class="num">01</span> Idle render loop <span class="verdict blog">keep from blog/moon</span></h2>
+        <p>blog/moon stops asking for animation frames once motion settles. MoonCanvas redraws all 365 ticks + moon + labels at 60fps <i>forever</i>, even when nothing moves.</p>
+        <div class="cols">
+          <div class="card win">
+            <div class="hd"><span>blog/moon ✓</span><span class="file">page.tsx:300</span></div>
+            <pre><span class="tag">// re-arm only while something animates</span>
+const isAnimating =
+  Math.abs(arcDiff) &gt; 0.5 || Math.abs(phaseDiff) &gt; 0.005;
+<span class="hl">if (isAnimating) {</span>
+  rafId = requestAnimationFrame(draw);
+<span class="hl">}</span></pre>
+          </div>
+          <div class="card lose">
+            <div class="hd"><span>MoonCanvas ✗</span><span class="file">MoonCanvas.tsx:447</span></div>
+            <pre><span class="tag">// runs every frame, no exit condition</span>
+
+
+  <span class="hl-bad">rafRef.current = requestAnimationFrame(draw);</span>
+<span class="tag">// ...60fps for the life of the page</span></pre>
+          </div>
+        </div>
+        <p class="why"><b>Why it matters:</b> constant canvas clearing + a 365-iteration loop pins a CPU core and drains battery on a static screen. The idle version wakes only on hover/select.</p>
+      </section>
+
+      <!-- 2 -->
+      <section class="feature">
+        <h2><span class="num">02</span> Ring-band hit detection <span class="verdict blog">keep from blog/moon</span></h2>
+        <p>blog/moon only treats the mouse as "on the dial" when it's inside the ring's band. MoonCanvas converts <i>any</i> point on the 360×360 canvas to a day — so hovering the moon in the center, or the empty corners, still scrubs the phase.</p>
+        <div class="viz">
+          <figure>
+            <svg width="150" height="150" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="58" fill="none" stroke="#4ade80" stroke-width="20" opacity="0.28"/>
+              <circle cx="75" cy="75" r="58" fill="none" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 3"/>
+              <circle cx="75" cy="75" r="20" fill="#3f3f46"/>
+              <text x="75" y="78" text-anchor="middle" font-size="9" fill="#a1a1aa">moon</text>
+            </svg>
+            <figcaption style="color:var(--good)">blog/moon — only the band is live</figcaption>
+          </figure>
+          <figure>
+            <svg width="150" height="150" viewBox="0 0 150 150">
+              <rect x="8" y="8" width="134" height="134" fill="#f87171" opacity="0.16" rx="6"/>
+              <rect x="8" y="8" width="134" height="134" fill="none" stroke="#f87171" stroke-width="1" stroke-dasharray="3 3" rx="6"/>
+              <circle cx="75" cy="75" r="58" fill="none" stroke="#52525b" stroke-width="2"/>
+              <circle cx="75" cy="75" r="20" fill="#3f3f46"/>
+              <text x="75" y="78" text-anchor="middle" font-size="9" fill="#a1a1aa">moon</text>
+            </svg>
+            <figcaption style="color:var(--bad)">MoonCanvas — whole canvas scrubs</figcaption>
+          </figure>
+        </div>
+        <div class="cols">
+          <div class="card win">
+            <div class="hd"><span>blog/moon ✓</span><span class="file">page.tsx:343</span></div>
+            <pre>const dist = Math.sqrt(x*x + y*y);
+<span class="hl">if (dist &lt; RING_RADIUS - 14 ||
+    dist &gt; RING_RADIUS + 14) {
+  setHoveredDay(null); return;
+}</span></pre>
+          </div>
+          <div class="card lose">
+            <div class="hd"><span>MoonCanvas ✗</span><span class="file">MoonCanvas.tsx:277</span></div>
+            <pre><span class="tag">// no distance check at all</span>
+let mouseAngle = Math.atan2(mouseY, mouseX);
+<span class="hl-bad">// any pixel → a day</span>
+setHoveredDay(day);</pre>
+          </div>
+        </div>
+        <p class="why"><b>Why it matters:</b> hovering the moon graphic itself shouldn't yank the date around. The band makes the dial feel like a dial.</p>
+      </section>
+
+      <!-- 3 -->
+      <section class="feature">
+        <h2><span class="num">03</span> Arc direction at the year boundary <span class="verdict canvas">keep MoonCanvas's behavior</span></h2>
+        <p>The arc is a progress fill anchored at Jan 1. On a big jump (e.g. Dec → Jan) the two iterations differ. <b>Decision: follow the day numbers.</b> Going from day 354 to day 5 is moving <i>earlier</i> in the year, so progress should rewind 97% → 1.4% — exactly what MoonCanvas already does with a plain lerp. blog/moon takes a spatial shortcut across the top, which misrepresents a single-year dial.</p>
+        <div class="viz">
+          <figure>
+            <svg width="150" height="150" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="55" fill="none" stroke="#27272a" stroke-width="8"/>
+              <path d="M 75 20 A 55 55 0 1 0 88 21.5" fill="none" stroke="#7dd3fc" stroke-width="8" stroke-linecap="round"/>
+              <path d="M 70 27 l -2 -9 l 9 3" fill="none" stroke="#7dd3fc" stroke-width="2"/>
+              <text x="75" y="80" text-anchor="middle" font-size="9" fill="#a1a1aa">day 354→5</text>
+              <text x="75" y="92" text-anchor="middle" font-size="8" fill="#71717a">rewinds (correct)</text>
+            </svg>
+            <figcaption style="color:#7dd3fc">MoonCanvas — honest to the numbers</figcaption>
+          </figure>
+          <figure>
+            <svg width="150" height="150" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="55" fill="none" stroke="#27272a" stroke-width="8"/>
+              <path d="M 75 20 A 55 55 0 0 1 88 21.5" fill="none" stroke="#f87171" stroke-width="8" stroke-linecap="round"/>
+              <path d="M 88 28 l 6 -7 l -8 -2" fill="none" stroke="#f87171" stroke-width="2"/>
+              <text x="75" y="80" text-anchor="middle" font-size="9" fill="#a1a1aa">day 354→5</text>
+              <text x="75" y="92" text-anchor="middle" font-size="8" fill="#71717a">short hop</text>
+            </svg>
+            <figcaption style="color:var(--bad)">blog/moon — misreads as cyclic</figcaption>
+          </figure>
+        </div>
+        <div class="cols">
+          <div class="card win">
+            <div class="hd"><span>MoonCanvas ✓</span><span class="file">MoonCanvas.tsx:350</span></div>
+            <pre><span class="tag">// straight lerp — follows day number</span>
+animatedArcRef.current +=
+  <span class="hl">(arcTarget - animatedArcRef.current)</span>
+  * 0.12;</pre>
+          </div>
+          <div class="card lose">
+            <div class="hd"><span>blog/moon ✗</span><span class="file">page.tsx:195</span></div>
+            <pre>let arcDiff = selectedDay - animatedArc;
+<span class="hl-bad">if (arcDiff &gt; 182.5)  arcDiff -= 365;
+if (arcDiff &lt; -182.5) arcDiff += 365;</span>
+animatedArc += arcDiff * 0.12;</pre>
+          </div>
+        </div>
+        <p class="why"><b>Note:</b> the moon <i>phase</i> lerp should still wrap (the lunar cycle is genuinely cyclic). Only the year-progress arc is linear — so phase wrapping + arc not wrapping is correct, not a conflict.</p>
+      </section>
+
+      <!-- 4 -->
+      <section class="feature">
+        <h2><span class="num">04</span> Progress arc lines up with the ticks <span class="verdict blog">keep from blog/moon</span></h2>
+        <p>Ticks sit at angle <code class="inl">(day − 1) / 365</code>. blog/moon ends the arc with the matching <code class="inl">(arc − 1)</code> offset so the arc head lands exactly on the selected tick. MoonCanvas uses <code class="inl">arc / 365</code>, so the rounded cap overshoots by one day's width.</p>
+        <div class="cols">
+          <div class="card win">
+            <div class="hd"><span>blog/moon ✓</span><span class="file">page.tsx:239</span></div>
+            <pre>endAngle = -PI/2 +
+  <span class="hl">((animatedArc - 1) / 365)</span> * 2*PI;
+<span class="tag">// matches the marker formula</span></pre>
+          </div>
+          <div class="card lose">
+            <div class="hd"><span>MoonCanvas ✗</span><span class="file">MoonCanvas.tsx:387</span></div>
+            <pre>endAngle = -PI/2 +
+  <span class="hl-bad">(animatedArc / 365)</span> * 2*PI;
+<span class="tag">// drifts 1 tick past the day</span></pre>
+          </div>
+        </div>
+        <p class="why"><b>Why it matters:</b> select Jan 1 → blog/moon shows no arc (0 progress, lands on the tick); MoonCanvas shows a one-day sliver poking past it. Minor, but blog/moon is the correct fencepost.</p>
+      </section>
+
+      <h3 class="kicker">Verdict</h3>
+      <div class="summary">
+        <table>
+          <tr><th>#</th><th>Difference</th><th>Keep</th></tr>
+          <tr><td>01</td><td>Idle render loop</td><td><span class="pill blog">blog/moon</span></td></tr>
+          <tr><td>02</td><td>Ring-band hit detection</td><td><span class="pill blog">blog/moon</span></td></tr>
+          <tr><td>03</td><td>Arc direction (day-number rewind)</td><td><span class="pill canvas">MoonCanvas</span></td></tr>
+          <tr><td>04</td><td>Arc / tick alignment</td><td><span class="pill blog">blog/moon</span></td></tr>
+        </table>
+      </div>
+      <p class="why" style="border-left-color: var(--faint); margin-top: 20px;">
+        (Dropped the earlier "selected-day highlight" item — on a closer read both versions already keep the selected day lit as the end of the in-progress range, so it wasn't a real difference. And there is no tooltip in either; the date text below the dial just shows hovered-or-selected.)
+      </p>
+    </div>
+  </body>
+</html>
