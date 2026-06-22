@@ -38,9 +38,9 @@ const groups: Group[] = [
         note: "Sidebar variant + scroll-driven canvas.",
       },
       {
-        route: "/blog/moon",
+        route: "/experiments/blog-moon",
         title: "Blog · Moon",
-        file: "src/app/blog/moon/page.tsx",
+        file: "src/app/experiments/blog-moon/page.tsx",
         note: "Inline iteration. Keeps a unique idle-RAF loop worth porting.",
       },
     ],
