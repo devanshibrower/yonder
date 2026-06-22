@@ -4,6 +4,8 @@
   --background: var(--color-zinc-900);
   --foreground: var(--color-gray-200);
   --secondary-text: var(--color-gray-400);
+  --scrollbar-thumb: rgb(255 255 255 / 24%);
+  --scrollbar-thumb-hover: rgb(255 255 255 / 42%);
 }
 
 @theme inline {
@@ -14,8 +16,52 @@
   --font-space-grotesk: var(--font-space-grotesk);
 }
 
+html,
 body {
   background: var(--background);
+  overscroll-behavior-y: none;
+}
+
+body {
   color: var(--foreground);
   font-family: var(--font-georgia), serif;
+}
+
+@supports (-moz-appearance: none) {
+  html,
+  * {
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+html::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+@media (forced-colors: active) {
+  @supports (-moz-appearance: none) {
+    html,
+    * {
+      scrollbar-color: auto;
+    }
+  }
 }
