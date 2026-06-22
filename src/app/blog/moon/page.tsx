@@ -191,7 +191,7 @@ export default function LunarCalendar() {
     const displayDay = hoveredDay ?? selectedDay;
     const targetPhase = getMoonPhase(displayDay);
 
-    function draw() {
+    const draw = () => {
       let arcDiff = selectedDay - animatedArcRef.current;
       if (arcDiff > 182.5) arcDiff -= 365;
       if (arcDiff < -182.5) arcDiff += 365;
@@ -300,7 +300,7 @@ export default function LunarCalendar() {
       if (isAnimating) {
         rafId = requestAnimationFrame(draw);
       }
-    }
+    };
 
     rafId = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafId);
