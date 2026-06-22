@@ -15,45 +15,56 @@ type Group = {
 
 const groups: Group[] = [
   {
-    heading: "Moon calendar — iterations",
-    blurb:
-      "Different takes on the same circular lunar calendar. These should eventually collapse into one.",
+    heading: "Components",
+    blurb: "Each reusable component, rendered on its own. Titles match the repo exactly.",
     items: [
       {
-        route: "/",
-        title: "Home",
+        route: "/experiments/moon-canvas",
+        title: "MoonCanvas",
         file: "src/components/ui/MoonCanvas.tsx",
-        note: "Renders <MoonCanvas> — the full date-input calendar dial.",
+        note: "Full date-input calendar dial. Also what the homepage renders.",
       },
       {
-        route: "/experiments/moon",
-        title: "Moon",
-        file: "src/components/ui/MoonCanvas.tsx",
-        note: "Renders <MoonCanvas> — same component as Home (duplicate route).",
-      },
-      {
-        route: "/experiments/showers",
-        title: "Showers",
+        route: "/experiments/moon-canvas-sidebar",
+        title: "MoonCanvasSidebar",
         file: "src/components/ui/MoonCanvasSidebar.tsx",
-        note: "Renders <MoonCanvasSidebar> + <ScrollDrivenCanvas> — controlled dial beside the scroll canvas.",
+        note: "Controlled dial variant (selectedDay / onDaySelect props).",
       },
       {
-        route: "/experiments/blog-moon",
-        title: "Blog · Moon",
-        file: "src/app/experiments/blog-moon/page.tsx",
-        note: "Inline (no shared component). Keeps a unique idle-RAF loop worth porting.",
+        route: "/experiments/moon-indicator",
+        title: "MoonIndicator",
+        file: "src/components/ui/MoonIndicator.tsx",
+        note: "Small presentational dial — halo, maria, tooltip. Props in, draw out.",
+      },
+      {
+        route: "/experiments/scroll-driven-canvas",
+        title: "ScrollDrivenCanvas",
+        file: "src/components/ui/ScrollDrivenCanvas.tsx",
+        note: "Meteor animation engine — scroll moves through the year.",
       },
     ],
   },
   {
-    heading: "Other experiments",
-    blurb: "Distinct directions beyond the calendar.",
+    heading: "Pages",
+    blurb: "Standalone experiment pages (not shared components).",
     items: [
+      {
+        route: "/experiments/blog-moon",
+        title: "BlogMoon",
+        file: "src/app/experiments/blog-moon/page.tsx",
+        note: "Inline moon dial — the cleaner iteration (idle loop, ring-band hit detection).",
+      },
+      {
+        route: "/experiments/showers",
+        title: "Showers",
+        file: "src/app/experiments/showers/page.tsx",
+        note: "Scroll experience composing MoonCanvasSidebar + ScrollDrivenCanvas.",
+      },
       {
         route: "/experiments/meteor-showers",
         title: "Meteor Showers",
-        file: "src/components/ui/MoonIndicator.tsx",
-        note: "Renders <MoonIndicator> + <ScrollDrivenCanvas> — the small presentational dial.",
+        file: "src/app/experiments/meteor-showers/page.tsx",
+        note: "Scroll experience composing MoonIndicator + ScrollDrivenCanvas.",
       },
     ],
   },
