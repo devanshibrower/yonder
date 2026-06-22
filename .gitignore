@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local review/analysis docs — keep on disk for viewing, never ship
+public/*-review.html
+public/*-comparison.html
