@@ -234,13 +234,13 @@ function parseDateInput(input: string): number | null {
 
 //-----------------------------------MAIN FUNCTION------------------------------------------
 
-interface LunarCalendarProps {
+interface MoonCanvasSidebarProps {
   selectedDay?: number;              // parent-controlled day (from scroll)
   onDaySelect?: (day: number) => void; // callback when user clicks/navigates
   currentLabel?: string;             // name of current shower or context
 }
 
-export default function LunarCalendar({ selectedDay: controlledDay, onDaySelect, currentLabel }: LunarCalendarProps = {}) {
+export default function MoonCanvasSidebar({ selectedDay: controlledDay, onDaySelect, currentLabel }: MoonCanvasSidebarProps = {}) {
   //------------------------REFS AND STATE----------------------------------------
 
   //<htmlcanvaselement> is declaring the type of element this ref is pointing to.

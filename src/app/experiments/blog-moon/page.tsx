@@ -151,7 +151,7 @@ function getIllumination(phase: number): number {
 
 // --- COMPONENT ---
 
-export default function LunarCalendar() {
+export default function BlogMoon() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
