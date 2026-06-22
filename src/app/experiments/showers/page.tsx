@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import ScrollDrivenCanvas from "@/components/ui/ScrollDrivenCanvas";
-import LunarCalendar from "@/components/ui/MoonCanvasSidebar";
+import MoonCanvasSidebar from "@/components/ui/MoonCanvasSidebar";
 
 import {
   All_Showers,
@@ -223,7 +223,7 @@ export default function main() {
         className="fixed left-0 top-0 h-screen z-20 w-[280px] flex flex-col items-center justify-center pointer-events-auto max-lg:hidden transition-opacity duration-300"
         style={{ opacity: sidebarOpacity }}
       >
-        <LunarCalendar
+        <MoonCanvasSidebar
           selectedDay={currentDay}
           onDaySelect={scrollToDay}
         />
