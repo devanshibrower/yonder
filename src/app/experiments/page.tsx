@@ -16,8 +16,21 @@ type Group = {
 const groups: Group[] = [
   {
     heading: "Components",
-    blurb: "Each reusable component, rendered on its own. Titles match the repo exactly.",
+    blurb:
+      "Each reusable component, rendered on its own. Titles match the repo exactly.",
     items: [
+      {
+        route: "/experiments/moon-calendar",
+        title: "MoonCalendar",
+        file: "src/components/ui/MoonCalendar.tsx",
+        note: "Moon phase for any date. Two models side by side — simple 29.53-day clock vs real-orbit accurate.",
+      },
+      {
+        route: "/experiments/moon-dial",
+        title: "MoonDial",
+        file: "src/components/ui/MoonDial.tsx",
+        note: "Interactive moon phase dial with date selection.",
+      },
       {
         route: "/experiments/moon-canvas",
         title: "MoonCanvas",
@@ -86,7 +99,7 @@ export default function Experiments() {
         <div className="flex flex-col gap-12">
           {groups.map((group) => (
             <section key={group.heading}>
-              <h2 className="font-sans text-xs font-medium uppercase tracking-widest text-zinc-400">
+              <h2 className="font-sans text-xs font-medium tracking-widest text-zinc-400 uppercase">
                 {group.heading}
               </h2>
               <p className="mt-1 mb-4 font-sans text-sm text-zinc-600">

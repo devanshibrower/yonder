@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MoonDial — one connected picture of the math</title>
+<style>
+  :root{
+    --bg:#0b0c0e; --panel:#141619; --line:#262a30; --text:#e7e9ec; --dim:#a2a8b0; --faint:#6b7178;
+    --lit:#e8e9ec; --dark:#2e323b; --amber:#e0b56b; --blue:#6ba8e0; --green:#86c98b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.6 ui-sans-serif,system-ui,-apple-system,sans-serif;padding:44px 20px 100px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-size:26px;letter-spacing:-0.02em;margin:0 0 6px}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .scene{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 12px}
+  canvas{display:block;width:100%;height:auto}
+  #hero{cursor:grab} #hero:active{cursor:grabbing}
+  .cap{font:14px/1.5 ui-monospace,Menlo,monospace;color:var(--text);text-align:center;margin:10px 4px 2px;min-height:20px}
+  .hint{color:var(--faint);text-align:center;font-size:13px;margin:0 0 6px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+  .chip{font:12px ui-monospace,Menlo,monospace;color:var(--dim);background:var(--bg);border:1px solid var(--line);
+    border-radius:999px;padding:6px 12px;cursor:pointer;user-select:none}
+  .chip:hover{border-color:var(--faint);color:var(--text)}
+  .chip.on{border-color:var(--blue);color:var(--blue)}
+  h2{font-size:18px;margin:44px 0 4px;letter-spacing:-0.01em}
+  .row2{display:grid;grid-template-columns:1fr 150px;gap:18px;align-items:center}
+  @media(max-width:560px){.row2{grid-template-columns:1fr}}
+  input[type=range]{width:100%;accent-color:var(--green)}
+  .lab{font:11px ui-monospace,Menlo,monospace;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:6px}
+  .foot{color:var(--faint);font-size:13px;margin-top:36px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>One number becomes a moon</h1>
+<p class="sub">Drag the green dot around the wheel. Watch its side-to-side position (that's cosine) turn into the width of the moon's day/night line. It's all one motion.</p>
+
+<div class="scene">
+  <canvas id="hero" width="900" height="470"></canvas>
+  <div class="cap" id="cap"></div>
+  <p class="hint">drag the dot · or tap a phase name on the wheel</p>
+  <div class="chips">
+    <button class="chip on" id="tLine">day/night line</button>
+    <button class="chip" id="tFull">whole ellipse</button>
+    <button class="chip" id="tFlip">break it (flip the half)</button>
+    <button class="chip" id="tPlay">▶ play</button>
+  </div>
+</div>
+
+<h2>Why dates need a library, not a stopwatch</h2>
+<p class="sub" style="margin-bottom:14px">The moon's orbit is an <span style="color:var(--blue)">ellipse</span>, so it speeds up when close and slows when far. Equal <em>days</em> are not equal <em>phase</em>. Drag day by day and watch the spacing stay uneven, that drift is why we let <code style="font-family:ui-monospace,Menlo,monospace">suncalc</code> do the real math.</p>
+<div class="scene row2">
+  <canvas id="orbit" width="520" height="300"></canvas>
+  <div>
+    <div class="lab">day of cycle</div>
+    <input type="range" id="day" min="0" max="1" step="0.001" value="0.08"/>
+    <div class="cap" id="orbitCap" style="text-align:left;margin-top:12px"></div>
+  </div>
+</div>
+
+<p class="foot">Local build artifact for MoonDial. Not shipped.</p>
+</div>
+
+<script>
+const TAU=Math.PI*2;
+const LIT="#e8e9ec",DARK="#2e323b",AMBER="#e0b56b",BLUE="#6ba8e0",GREEN="#86c98b",FAINT="#454b53";
+
+function setup(cv,w,h){const d=window.devicePixelRatio||1;cv.width=w*d;cv.height=h*d;
+  const c=cv.getContext("2d");c.scale(d,d);cv._w=w;cv._h=h;return c;}
+function name(p){const f=(1-Math.cos(TAU*p))/2,w=p<0.5;
+  if(f<0.02)return"new moon";if(f>0.98)return"full moon";
+  if(Math.abs(f-0.5)<0.03)return w?"first quarter":"last quarter";
+  if(f<0.5)return w?"waxing crescent":"waning crescent";return w?"waxing gibbous":"waning gibbous";}
+
+function drawMoon(c,cx,cy,r,p,o={}){
+  const{dark=true,fill=true,line=false,full=false,flip=false,rim=true}=o;
+  const wax=p<0.5,w=Math.cos(TAU*p),rx=Math.abs(w)*r;
+  if(dark){c.beginPath();c.arc(cx,cy,r,0,TAU);c.fillStyle=DARK;c.fill();}
+  if(fill){
+    let dir=wax?w>0:w<0; if(flip)dir=!dir;
+    c.save();c.beginPath();c.arc(cx,cy,r,0,TAU);c.clip();
+    c.beginPath();c.moveTo(cx,cy-r);
+    c.arc(cx,cy,r,-Math.PI/2,Math.PI/2,!wax);
+    c.ellipse(cx,cy,rx,r,0,Math.PI/2,-Math.PI/2,dir);
+    c.closePath();c.fillStyle=LIT;c.fill();c.restore();
+  }
+  if(full){c.beginPath();c.ellipse(cx,cy,rx,r,0,0,TAU);c.strokeStyle=FAINT;c.lineWidth=1.5;c.stroke();}
+  if(line){let dir=wax?w>0:w<0; if(flip)dir=!dir;
+    c.beginPath();c.ellipse(cx,cy,rx,r,0,Math.PI/2,-Math.PI/2,dir);c.strokeStyle=BLUE;c.lineWidth=3;c.stroke();}
+  if(rim){c.beginPath();c.arc(cx,cy,r,0,TAU);c.strokeStyle="rgba(255,255,255,.1)";c.lineWidth=1;c.stroke();}
+}
+
+/* =================== HERO: connected pipeline =================== */
+const hero=document.getElementById("hero");
+const hc=setup(hero,900,470);
+const cap=document.getElementById("cap");
+const WC={x:210,y:230,R:150};   // wheel
+const MC={x:660,y:230,r:150};   // moon (same radius as wheel R -> cos length == ellipse width)
+let PHASE=0.13, playing=false, raf=0;
+const opt={line:true,full:false,flip:false};
+
+const marks=[[0,"new","left","middle"],[0.25,"first quarter","center","bottom"],[0.5,"full","right","middle"],[0.75,"last quarter","center","top"]];
+
+function hero_render(){
+  const p=PHASE, a=TAU*p, cos=Math.cos(a), rx=Math.abs(cos)*MC.r;
+  hc.clearRect(0,0,900,470);
+
+  // ---------- WHEEL ----------
+  const {x:cx,y:cy,R}=WC;
+  // cos axis
+  hc.strokeStyle="rgba(255,255,255,.12)";hc.lineWidth=1;
+  hc.beginPath();hc.moveTo(cx-R-26,cy);hc.lineTo(cx+R+26,cy);hc.stroke();
+  hc.beginPath();hc.moveTo(cx,cy-R-26);hc.lineTo(cx,cy+R+26);hc.stroke();
+  hc.fillStyle=FAINT;hc.font="12px ui-monospace,monospace";hc.textBaseline="middle";
+  hc.textAlign="left";hc.fillText("+1",cx+R+8,cy-12);
+  hc.textAlign="right";hc.fillText("−1",cx-R-8,cy-12);
+  hc.textAlign="left";hc.fillText("0",cx+6,cy-12);
+  hc.fillStyle="rgba(224,181,107,.6)";hc.textAlign="center";hc.fillText("cos = left/right position",cx,cy+R+44);
+  // ring
+  hc.beginPath();hc.arc(cx,cy,R,0,TAU);hc.strokeStyle="rgba(255,255,255,.16)";hc.lineWidth=2;hc.stroke();
+  // 8 tiny moons on the ring
+  for(let k=0;k<8;k++){const q=k/8, ang=TAU*q; const mx=cx+Math.cos(ang)*R, my=cy-Math.sin(ang)*R;
+    drawMoon(hc,mx,my,13,q,{rim:true});}
+  // principal names — placed exactly where the dot lands for that phase
+  hc.fillStyle=var_dim();hc.font="12px ui-sans-serif,system-ui";
+  marks.forEach(([mp,label,al,bl])=>{
+    const ma=TAU*mp;
+    const lx=cx+Math.cos(ma)*(R+30), ly=cy-Math.sin(ma)*(R+30);
+    hc.textAlign=al; hc.textBaseline=bl;
+    hc.fillText(label,lx,ly);
+  });
+  // current dot
+  const dx=cx+Math.cos(a)*R, dy=cy-Math.sin(a)*R;
+  hc.strokeStyle="rgba(134,201,139,.4)";hc.lineWidth=2;hc.beginPath();hc.moveTo(cx,cy);hc.lineTo(dx,dy);hc.stroke();
+  // vertical drop to cos axis
+  hc.setLineDash([4,5]);hc.beginPath();hc.moveTo(dx,dy);hc.lineTo(dx,cy);hc.strokeStyle="rgba(255,255,255,.28)";hc.lineWidth=1.5;hc.stroke();hc.setLineDash([]);
+  // amber cos segment on the axis (length = cos*R)
+  hc.beginPath();hc.moveTo(cx,cy);hc.lineTo(cx+cos*R,cy);hc.strokeStyle=AMBER;hc.lineWidth=6;hc.stroke();
+  drawMoon(hc,dx,dy,17,p,{rim:true}); // the dot IS the current moon
+  hc.beginPath();hc.arc(dx,dy,19,0,TAU);hc.strokeStyle=GREEN;hc.lineWidth=2.5;hc.stroke();
+
+  // ---------- CONNECTOR ----------
+  const projX=cx+cos*R;
+  hc.setLineDash([3,6]);hc.strokeStyle="rgba(224,181,107,.5)";hc.lineWidth=1.5;
+  hc.beginPath();hc.moveTo(projX,cy);hc.lineTo(MC.x-MC.r-6,cy);hc.stroke();hc.setLineDash([]);
+  hc.fillStyle=AMBER;hc.font="12px ui-monospace,monospace";hc.textAlign="center";hc.textBaseline="bottom";
+  hc.fillText("× radius", (projX+MC.x-MC.r)/2, cy-8);
+  hc.fillStyle=BLUE;hc.textBaseline="top";
+  hc.fillText(Math.round(rx)+"px wide",(projX+MC.x-MC.r)/2, cy+8);
+
+  // ---------- MOON ----------
+  drawMoon(hc,MC.x,MC.y,MC.r,p,{line:opt.line,full:opt.full,flip:opt.flip});
+  // width bar under the moon, same length idea
+  hc.strokeStyle=BLUE;hc.lineWidth=4;hc.beginPath();hc.moveTo(MC.x-rx,MC.y+MC.r+18);hc.lineTo(MC.x+rx,MC.y+MC.r+18);hc.stroke();
+  hc.fillStyle=var_dim();hc.font="12px ui-sans-serif";hc.textAlign="center";hc.textBaseline="top";
+  hc.fillText("lit part → "+name(p), MC.x, MC.y+MC.r+30);
+
+  // caption
+  const note = Math.abs(cos)<0.06 ? "straight line → exactly half lit"
+    : Math.abs(Math.abs(cos)-1)<0.06 ? (name(p)==="new moon"?"full width, on the far rim → no light":"full width → all lit")
+    : (cos>0?"bulges toward the lit side → crescent":"bulges away → gibbous");
+  cap.innerHTML = `phase <b style="color:${GREEN}">${p.toFixed(2)}</b> &nbsp; cos <b style="color:${AMBER}">${cos.toFixed(2)}</b> &nbsp; width <b style="color:${BLUE}">${Math.round(rx)}px</b> &nbsp;·&nbsp; ${note}`;
+}
+function var_dim(){return "#a2a8b0";}
+
+// drag / tap on wheel
+function setFromPointer(evt){
+  const rect=hero.getBoundingClientRect();
+  const x=(evt.clientX-rect.left)*(900/rect.width);
+  const y=(evt.clientY-rect.top)*(470/rect.height);
+  const dx=x-WC.x, dy=y-WC.y;
+  if(Math.hypot(dx,dy)>WC.R+70) return false;
+  const ang=Math.atan2(-dy,dx);
+  PHASE=((ang/TAU)%1+1)%1;
+  hero_render();
+  return true;
+}
+let dragging=false;
+hero.addEventListener("pointerdown",e=>{ if(setFromPointer(e)){dragging=true;hero.setPointerCapture(e.pointerId);} });
+hero.addEventListener("pointermove",e=>{ if(dragging)setFromPointer(e); });
+hero.addEventListener("pointerup",()=>dragging=false);
+
+// toggles
+function toggle(id,key){const b=document.getElementById(id);
+  b.addEventListener("click",()=>{opt[key]=!opt[key];b.classList.toggle("on",opt[key]);hero_render();});}
+toggle("tFull","full"); toggle("tFlip","flip");
+const bl=document.getElementById("tLine");
+bl.addEventListener("click",()=>{opt.line=!opt.line;bl.classList.toggle("on",opt.line);hero_render();});
+const bp=document.getElementById("tPlay");
+bp.addEventListener("click",()=>{playing=!playing;bp.textContent=playing?"❚❚ pause":"▶ play";
+  if(playing){const step=()=>{PHASE=(PHASE+0.0016)%1;hero_render();if(playing)raf=requestAnimationFrame(step);};raf=requestAnimationFrame(step);}
+  else cancelAnimationFrame(raf);});
+hero_render();
+
+/* =================== ORBIT =================== */
+const orbit=document.getElementById("orbit");
+const oc=setup(orbit,520,300);
+const oCap=document.getElementById("orbitCap");
+const day=document.getElementById("day");
+(function(){
+  const e=0.45,a=115,b=a*Math.sqrt(1-e*e),ex=270,ey=150,focus=a*e,ccx=ex-focus;
+  function E(M){let x=M;for(let i=0;i<6;i++)x=x-(x-e*Math.sin(x)-M)/(1-e*Math.cos(x));return x;}
+  function pos(t){const ea=E(TAU*t);return{x:ccx+a*Math.cos(ea),y:ey-b*Math.sin(ea)};}
+  function phaseAt(px,py){return(((Math.atan2(py-ey,px-ex)/TAU)%1)+1)%1;}
+  function render(){
+    const t=parseFloat(day.value);oc.clearRect(0,0,520,300);
+    // sun + rays
+    oc.beginPath();oc.arc(495,150,16,0,TAU);oc.fillStyle=AMBER;oc.fill();
+    for(let y=125;y<=175;y+=25){oc.beginPath();oc.moveTo(475,y);oc.lineTo(410,y);oc.strokeStyle="rgba(224,181,107,.28)";oc.lineWidth=1;oc.stroke();}
+    // orbit
+    oc.setLineDash([5,7]);oc.beginPath();oc.ellipse(ccx,ey,a,b,0,0,TAU);oc.strokeStyle="rgba(107,168,224,.4)";oc.lineWidth=1.5;oc.stroke();oc.setLineDash([]);
+    // equal-time dots (bunch where slow)
+    for(let k=0;k<24;k++){const q=pos(k/24);oc.beginPath();oc.arc(q.x,q.y,2.3,0,TAU);oc.fillStyle="rgba(255,255,255,.3)";oc.fill();}
+    oc.fillStyle=FAINT;oc.font="11px ui-monospace,monospace";oc.textAlign="center";
+    oc.fillText("close · fast",ex+95,ey-b-6);oc.fillText("far · slow",ccx-a+34,ey-b-6);
+    // earth
+    oc.beginPath();oc.arc(ex,ey,10,0,TAU);oc.fillStyle="#5f8ed7";oc.fill();
+    // moon
+    const m=pos(t),ph=phaseAt(m.x,m.y);
+    oc.strokeStyle="rgba(134,201,139,.4)";oc.lineWidth=1.5;oc.beginPath();oc.moveTo(ex,ey);oc.lineTo(m.x,m.y);oc.stroke();
+    drawMoon(oc,m.x,m.y,13,ph);
+    oc.beginPath();oc.arc(m.x,m.y,15,0,TAU);oc.strokeStyle=GREEN;oc.lineWidth=2;oc.stroke();
+    oCap.innerHTML=`day <b>${(t*29.53).toFixed(1)}</b> / 29.5<br>phase <b style="color:${GREEN}">${ph.toFixed(2)}</b> · ${name(ph)}`;
+  }
+  day.addEventListener("input",render);render();
+})();
+</script>
+</body>
+</html>

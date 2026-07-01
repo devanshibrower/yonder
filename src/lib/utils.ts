@@ -33,19 +33,43 @@ export const ShowerVisuals: Record<
   lyrids: { radiantX: 0.6, radiantY: 0.15, colorHue: 45 },
   //Keys in quotes like "eta-aquariids" need quotes because they contain hyphens — bare identifiers can't have hyphens in JavaScript.
   "eta-aquariids": { radiantX: 0.7, radiantY: 0.65, colorHue: 110 },
-  "southern-delta-aquariids": { radiantX: 0.72, radiantY: 0.7, colorHue: 55 },
-  "alpha-capricornids": { radiantX: 0.55, radiantY: 0.6, colorHue: 30 },
-  perseids: { radiantX: 0.25, radiantY: 0.15, colorHue: 55, colorVariance: 90 },
+  "southern-delta-aquariids": {
+    radiantX: 0.72,
+    radiantY: 0.7,
+    colorHue: 55,
+  },
+  "alpha-capricornids": {
+    radiantX: 0.55,
+    radiantY: 0.6,
+    colorHue: 30,
+  },
+  perseids: {
+    radiantX: 0.25,
+    radiantY: 0.15,
+    colorHue: 55,
+    colorVariance: 90,
+  },
   orionids: { radiantX: 0.4, radiantY: 0.45, colorHue: 110 },
   "southern-taurids": { radiantX: 0.3, radiantY: 0.4, colorHue: 35 },
-  "northern-taurids": { radiantX: 0.32, radiantY: 0.35, colorHue: 30 },
+  "northern-taurids": {
+    radiantX: 0.32,
+    radiantY: 0.35,
+    colorHue: 30,
+  },
   leonids: { radiantX: 0.5, radiantY: 0.35, colorHue: 120 },
-  geminids: { radiantX: 0.45, radiantY: 0.2, colorHue: 45, colorVariance: 120 },
+  geminids: {
+    radiantX: 0.45,
+    radiantY: 0.2,
+    colorHue: 45,
+    colorVariance: 120,
+  },
   ursids: { radiantX: 0.5, radiantY: 0.1, colorHue: 210 },
 };
 
 //Build a meteorConfig from a single shower's JSON data + visual lookup. Used when displaying a specific shower on canvas.
-export function buildMeteorConfig(shower: MeteorShower): MeteorConfig {
+export function buildMeteorConfig(
+  shower: MeteorShower,
+): MeteorConfig {
   //look up visuals, fallback to defaults if shower ID isnt in the table.
   const visuals = ShowerVisuals[shower.id] ?? {
     radiantX: 0.5,
@@ -60,8 +84,13 @@ export function buildMeteorConfig(shower: MeteorShower): MeteorConfig {
     colorHue: visuals.colorHue,
     moonIllumination: shower.moonPhase2026.percentIlluminated,
     moonPhaseName: shower.moonPhase2026.phaseName,
-    parentObjectType: shower.parentObject.type as "comet" | "asteroid",
-    velocityCategory: shower.velocity.category as "slow" | "medium" | "swift",
+    parentObjectType: shower.parentObject.type as
+      | "comet"
+      | "asteroid",
+    velocityCategory: shower.velocity.category as
+      | "slow"
+      | "medium"
+      | "swift",
     peakMonth: shower.peak.month,
     colorVariance: visuals.colorVariance,
   };
@@ -71,7 +100,7 @@ export function buildMeteorConfig(shower: MeteorShower): MeteorConfig {
 
 export function buildDayConfig(
   dayOfYear: number,
-  showers: MeteorShower[]
+  showers: MeteorShower[],
 ): MeteorConfig {
   const month = dayToMonth(dayOfYear);
   const moonIllumination = moonIlluminationForDay(dayOfYear);
@@ -102,7 +131,9 @@ export function buildDayConfig(
       colorHue: visual.colorHue,
       moonIllumination: moonIllumination,
       moonPhaseName: moonPhase,
-      parentObjectType: bestShower.parentObject.type as "comet" | "asteroid",
+      parentObjectType: bestShower.parentObject.type as
+        | "comet"
+        | "asteroid",
       velocityCategory: bestShower.velocity.category as
         | "slow"
         | "medium"
@@ -128,7 +159,9 @@ export function buildDayConfig(
 
 //days in each month for 2026 (non-leap year)
 //index 0 is unused so that january = index 1. 0 at index 0 is a placeholder, so months line up with their natural number.
-const DaysInMonth = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const DaysInMonth = [
+  0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+];
 
 //record is a typescript utility type. it says "this is an object where every key is a string and every value is a number". More speciifc version of { [key: string]: number }. we use an object instead of an array because we want to match the month name to the number of the month, index doesnt matter.
 
@@ -178,7 +211,7 @@ export function dayToMonth(dayOfYear: number): number {
   return 12; //default to December if we get here
 }
 
-//month nymber to name. index 0 is empty, so month 1 is January. ?? is nullish coalescing operator. if the left side is null or undefined, return the right side, which in this case in an empty string.
+//month number to name. index 0 is empty, so month 1 is January. ?? is nullish coalescing operator. if the left side is null or undefined, return the right side, which in this case in an empty string.
 const MonthNames = [
   "",
   "January",
@@ -272,7 +305,8 @@ export function moonPhaseNameForDay(dayOfYear: number): string {
 //peak day of the year for a shower. Same logic as parseDatetoDay, but uses the numeric month/day from the shower data instead of parsing a string.
 export function showerPeakDay(shower: MeteorShower): number {
   let doy = shower.peak.dayOfMonth;
-  for (let m = 1; m < shower.peak.month; m++) doy = doy + DaysInMonth[m];
+  for (let m = 1; m < shower.peak.month; m++)
+    doy = doy + DaysInMonth[m];
   return doy;
 }
 
@@ -310,7 +344,9 @@ export interface SpacerSection {
 export type LayoutSection = ShowerSection | SpacerSection;
 
 //this function will take all 12 showers (sorted by peak date) and produce the array of sections on the website, alternating spacers and showers.
-export function buildLayout(showers: MeteorShower[]): LayoutSection[] {
+export function buildLayout(
+  showers: MeteorShower[],
+): LayoutSection[] {
   //layout is the array we will return
   const layout: LayoutSection[] = [];
   //this maps the peak day for every shower, giving an array of peak day numbers like [3, 112,...etc]
@@ -379,7 +415,10 @@ function showerActiveDays(shower: MeteorShower): {
 //   ____/      \____
 //  start  peak  end
 
-function instantaneousZHR(dayOfYear: number, shower: MeteorShower): number {
+function instantaneousZHR(
+  dayOfYear: number,
+  shower: MeteorShower,
+): number {
   const { start, end } = showerActiveDays(shower);
   const peak = showerPeakDay(shower);
 
@@ -428,7 +467,7 @@ export function lerpHue(a: number, b: number, t: number): number {
 export function lerpConfig(
   configA: MeteorConfig,
   configB: MeteorConfig,
-  t: number
+  t: number,
 ): MeteorConfig {
   //snap = true when we're closer to configA (first half of blend)
   const snap = t < 0.5;
@@ -436,7 +475,7 @@ export function lerpConfig(
     velocityKmPerSec: lerp(
       configA.velocityKmPerSec,
       configB.velocityKmPerSec,
-      t
+      t,
     ),
     zhr: lerp(configA.zhr, configB.zhr, t),
     radiantX: lerp(configA.radiantX, configB.radiantX, t),
@@ -445,24 +484,29 @@ export function lerpConfig(
     moonIllumination: lerp(
       configA.moonIllumination,
       configB.moonIllumination,
-      t
+      t,
     ),
     //string fields cant blend, so use A's value in first half and B's in second half
-    moonPhaseName: snap ? configA.moonPhaseName : configB.moonPhaseName,
+    moonPhaseName: snap
+      ? configA.moonPhaseName
+      : configB.moonPhaseName,
     parentObjectType: snap
       ? configA.parentObjectType
       : configB.parentObjectType,
     velocityCategory: snap
       ? configA.velocityCategory
       : configB.velocityCategory,
-    peakMonth: Math.round(lerp(configA.peakMonth, configB.peakMonth, t)),
+    peakMonth: Math.round(
+      lerp(configA.peakMonth, configB.peakMonth, t),
+    ),
     //colorVariance: only blend if both configs have it, otherwise snap colorVariance.
     colorVariance:
-      configA.colorVariance !== undefined && configB.colorVariance !== undefined
+      configA.colorVariance !== undefined &&
+      configB.colorVariance !== undefined
         ? lerp(configA.colorVariance, configB.colorVariance, t)
         : snap
-        ? configA.colorVariance
-        : configB.colorVariance,
+          ? configA.colorVariance
+          : configB.colorVariance,
   };
 }
 
@@ -474,7 +518,9 @@ export function lerpConfig(
 
 //this arrary drives the entire scroll experience. Index 0 = day 1 (jan 1), index 364 = day 365 (dec 31).
 
-export function buildYearConfigs(showers: MeteorShower[]): MeteorConfig[] {
+export function buildYearConfigs(
+  showers: MeteorShower[],
+): MeteorConfig[] {
   const configs: MeteorConfig[] = [];
   for (let day = 1; day <= 365; day++) {
     configs.push(buildDayConfig(day, showers));
