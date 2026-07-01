@@ -172,17 +172,17 @@ export class MeteorAnimation {
     const sizeRoll = Math.random();
     let length: number, thickness: number;
     if (isFireball) {
-      length = (90 + Math.random() * 70) * velocityFactor;
-      thickness = 3.0 + Math.random() * 2.5;
-    } else if (sizeRoll < 0.4) {
-      length = (12 + Math.random() * 20) * velocityFactor;
-      thickness = 0.4 + Math.random() * 0.4;
-    } else if (sizeRoll < 0.85) {
-      length = (30 + Math.random() * 35) * velocityFactor;
-      thickness = 0.8 + Math.random() * 0.8;
+      length = (120 + Math.random() * 100) * velocityFactor;
+      thickness = 3.5 + Math.random() * 3.0;
+    } else if (sizeRoll < 0.3) {
+      length = (20 + Math.random() * 30) * velocityFactor;
+      thickness = 0.5 + Math.random() * 0.5;
+    } else if (sizeRoll < 0.75) {
+      length = (45 + Math.random() * 50) * velocityFactor;
+      thickness = 1.0 + Math.random() * 1.0;
     } else {
-      length = (60 + Math.random() * 40) * velocityFactor;
-      thickness = 1.6 + Math.random() * 1.2;
+      length = (80 + Math.random() * 60) * velocityFactor;
+      thickness = 2.0 + Math.random() * 1.5;
     }
 
     this.meteors.push({
@@ -194,11 +194,11 @@ export class MeteorAnimation {
       length,
       thickness,
       isFireball,
-      opacity: isFireball ? 1.0 : 0.3 + Math.random() * 0.7,
+      opacity: isFireball ? 1.0 : 0.5 + Math.random() * 0.5,
       hue: colorHue + (Math.random() - 0.5) * 40,
       life: 0,
-      maxLife: 90 + Math.random() * 30,
-      saturation: isFireball ? 65 : 40 + Math.random() * 30,
+      maxLife: 110 + Math.random() * 40,
+      saturation: isFireball ? 70 : 45 + Math.random() * 30,
     });
   }
   private drawMeteor(ctx: CanvasRenderingContext2D, m: Meteor) {
@@ -239,7 +239,7 @@ export class MeteorAnimation {
     ctx.stroke();
 
     // Head glow
-    const glowRadius = m.isFireball ? 8 : 4;
+    const glowRadius = m.isFireball ? 12 : 6;
     const headGlow = ctx.createRadialGradient(
       m.x,
       m.y,
@@ -563,7 +563,7 @@ export class MeteorAnimation {
 
     // Spawn + update + draw meteors
     const zhr = this.config.zhr;
-    const visualRate = zhr <= 0 ? 0 : 0.3 + 4.0 * Math.pow(zhr / 150, 0.6);
+    const visualRate = zhr <= 0 ? 0 : 0.6 + 6.0 * Math.pow(zhr / 150, 0.55);
     const spawnRate = visualRate * (dt / 1000);
     this.spawnAccumulator += spawnRate;
     while (this.spawnAccumulator >= 1) {
