@@ -1,3 +1,6 @@
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
 import { MeteorShower } from "@/data/types";
 import showersData from "@/data/showers.json";
 
@@ -526,4 +529,9 @@ export function buildYearConfigs(
     configs.push(buildDayConfig(day, showers));
   }
   return configs;
+}
+
+// Merge Tailwind class names safely (used by shadcn components).
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }
