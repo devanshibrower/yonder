@@ -55,6 +55,12 @@ const groups: Group[] = [
         file: "src/components/ui/ScrollDrivenCanvas.tsx",
         note: "Meteor animation engine — scroll moves through the year.",
       },
+      {
+        route: "/experiments/sky-moon",
+        title: "SkyMoonStudy",
+        file: "src/components/ui/SkyMoonStudy.tsx",
+        note: "Canvas atmosphere table, star fade, and procedural moon phase texture.",
+      },
     ],
   },
   {
