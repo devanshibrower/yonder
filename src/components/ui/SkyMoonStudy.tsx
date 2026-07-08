@@ -95,6 +95,9 @@ type RendererState = {
   moonTextureCtx: CanvasRenderingContext2D;
   moonTextureData: ImageData | null;
   moonTextureVersion: number;
+  cloudCanvas: HTMLCanvasElement;
+  cloudCtx: CanvasRenderingContext2D;
+  cloudCacheKey: string;
   moonCacheKey: string;
   moonSvsImage: HTMLImageElement | null;
   moonSvsImageSrc: string;
@@ -109,9 +112,9 @@ type RendererState = {
 
 const NASA_MOON_TEXTURE_SRC = "/moon/nasa-lroc-color-2k.jpg";
 const NASA_MOON_SAMPLES_SRC = "/moon/nasa-moon-2026-samples.json";
-const NASA_SVS_2026_LOCAL_FRAME_SRC = "/moon/svs-2026-730";
+const NASA_SVS_2026_LOCAL_FRAME_SRC = "/moon/svs-2026-3840";
 const LOCAL_NASA_SVS_2026_FRAMES = new Set([
-  4489, 4495, 4501, 4507, 4513,
+  4489, 4495, 4501, 4507, 4513, 4519, 4525, 4531, 4537,
 ]);
 const SYNODIC_MONTH_DAYS = 29.530588853;
 const DEFAULT_TIME_OF_DAY = 20.5;
@@ -285,6 +288,44 @@ function mulberry32(seed: number) {
   };
 }
 
+function hashNoise(x: number, y: number, seed: number) {
+  const value =
+    Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453123;
+
+  return value - Math.floor(value);
+}
+
+function valueNoise(x: number, y: number, seed: number) {
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const tx = x - x0;
+  const ty = y - y0;
+  const sx = tx * tx * (3 - 2 * tx);
+  const sy = ty * ty * (3 - 2 * ty);
+  const a = hashNoise(x0, y0, seed);
+  const b = hashNoise(x0 + 1, y0, seed);
+  const c = hashNoise(x0, y0 + 1, seed);
+  const d = hashNoise(x0 + 1, y0 + 1, seed);
+
+  return lerp(lerp(a, b, sx), lerp(c, d, sx), sy);
+}
+
+function fbmNoise(x: number, y: number, seed: number) {
+  let value = 0;
+  let amplitude = 0.52;
+  let frequency = 1;
+  let total = 0;
+
+  for (let octave = 0; octave < 5; octave += 1) {
+    value += valueNoise(x * frequency, y * frequency, seed + octave) * amplitude;
+    total += amplitude;
+    amplitude *= 0.52;
+    frequency *= 2.03;
+  }
+
+  return value / total;
+}
+
 function buildStars(width: number, height: number): Star[] {
   const random = mulberry32(20260706);
   const count = Math.round((width * height) / 1250);
@@ -351,7 +392,7 @@ function localSvsMoonFrameSrc(frameNumber: number | null) {
 
   return `${NASA_SVS_2026_LOCAL_FRAME_SRC}/moon.${padSvsFrameNumber(
     frameNumber,
-  )}.jpg`;
+  )}.png`;
 }
 
 function createMoonVisualState(
@@ -397,7 +438,7 @@ function createMoonVisualState(
     source,
     sourceLabel:
       source === "nasa-svs-frame"
-        ? "NASA SVS frame"
+        ? "NASA SVS HD frame"
         : "LROC texture renderer",
     svsFrameNumber,
     svsImageSrc,
@@ -820,10 +861,28 @@ function renderSvsMoonTexture(
   canvas.width = size * scale;
   canvas.height = size * scale;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const sourceSize = Math.min(sourceWidth, sourceHeight);
+  const sourceX = (sourceWidth - sourceSize) / 2;
+  const sourceY = (sourceHeight - sourceSize) / 2;
+
+  ctx.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceSize,
+    sourceSize,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  );
 
   const rendered = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = rendered.data;
+  const sourceData = new Uint8ClampedArray(data);
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   const scaledRadius = radius * scale;
@@ -831,10 +890,21 @@ function renderSvsMoonTexture(
   const skyTint = visual.skyTint;
   const daylight = visual.daylight;
   const nightVisibility = visual.nightVisibility;
-  const litOpacity = lerp(0.46, 0.98, nightVisibility) * look.moonOpacity;
+  const nightBodyBlend = smoothstep(0.32, 0.78, nightVisibility);
+  const litOpacity = lerp(0.72, 0.98, nightVisibility) * look.moonOpacity;
   const darkBodyOpacity =
     0.045 + nightVisibility * 0.82 + look.shadowVisibility * 0.035;
-  const daylightBaseOpacity = 0.006 + look.shadowVisibility * 0.008;
+  const sampleSourceLuma = (x: number, y: number) => {
+    const sx = clamp(Math.round(x), 0, canvas.width - 1);
+    const sy = clamp(Math.round(y), 0, canvas.height - 1);
+    const index = (sy * canvas.width + sx) * 4;
+
+    return (
+      sourceData[index] * 0.28 +
+      sourceData[index + 1] * 0.56 +
+      sourceData[index + 2] * 0.16
+    );
+  };
 
   for (let py = 0; py < canvas.height; py += 1) {
     for (let px = 0; px < canvas.width; px += 1) {
@@ -850,49 +920,121 @@ function renderSvsMoonTexture(
 
       const distance = Math.sqrt(distanceSquared);
       const radialEdge = clamp((1 - distance) * scaledRadius);
-      const r = data[pixelIndex];
-      const g = data[pixelIndex + 1];
-      const b = data[pixelIndex + 2];
+      const sourceAlpha = sourceData[pixelIndex + 3] / 255;
+      const r = sourceData[pixelIndex];
+      const g = sourceData[pixelIndex + 1];
+      const b = sourceData[pixelIndex + 2];
       const luma = r * 0.28 + g * 0.56 + b * 0.16;
-      const sourceSignal = smoothstep(2, 16, luma);
+      const sourceCoverage = Math.max(
+        smoothstep(2, 18, luma),
+        sourceAlpha,
+      );
       const nightDiskSignal =
-        nightVisibility * (1 - smoothstep(0.84, 0.99, distance));
-      const alphaSignal = Math.max(sourceSignal, nightDiskSignal);
-      const litSignal = smoothstep(22, 116, luma);
-      const daylightLitPresence = smoothstep(0.58, 0.96, litSignal);
+        sourceAlpha *
+        nightBodyBlend *
+        (1 - smoothstep(0.9, 1, distance));
+      const litSignal = smoothstep(36, 142, luma);
+      const brightSignal = smoothstep(78, 206, luma);
+      const blurLuma =
+        (sampleSourceLuma(px - 2, py) +
+          sampleSourceLuma(px + 2, py) +
+          sampleSourceLuma(px, py - 2) +
+          sampleSourceLuma(px, py + 2)) *
+        0.25;
+      const localRelief = clamp(luma - blurLuma, -28, 34);
+      const reliefPresence = smoothstep(5, 24, Math.abs(localRelief));
+      const terminatorTexture =
+        smoothstep(18, 118, luma) *
+        (1 - smoothstep(150, 224, luma)) *
+        reliefPresence;
+      const daySurface = clamp(
+        litSignal + brightSignal * 0.08 + terminatorTexture * 0.06,
+      );
+      const daylightLimbGlow =
+        daylight *
+        (1 - nightBodyBlend) *
+        smoothstep(0.82, 0.99, distance) *
+        smoothstep(118, 222, luma) *
+        (0.42 + reliefPresence * 0.58);
       const daylightBlend = clamp(
-        daylight * (0.14 + (1 - daylightLitPresence) * 0.12),
+        daylight *
+          (0.02 +
+            (1 - daySurface) * 0.08 +
+            (1 - reliefPresence) * (1 - daySurface) * 0.03),
         0,
-        0.42,
+        0.18,
       );
-      const atmosphericLift = daylight * (1 - daylightLitPresence) * 6;
-      const daytimeAlpha = lerp(
-        daylightBaseOpacity,
-        litOpacity,
-        daylightLitPresence,
-      );
+      const atmosphericLift = daylight * litSignal * 2;
+      const daylightMaterial =
+        daylight *
+        (1 - nightBodyBlend) *
+        (0.62 + daySurface * 0.24);
+      const dayRelief =
+        localRelief *
+        daylight *
+        (0.42 + daySurface * 0.36 + terminatorTexture * 0.18);
+      const dayDesaturation = 0.64;
+      const dayLift = 116 + brightSignal * 16 + daylightLimbGlow * 8;
+      const dayR =
+        lerp(r, luma, dayDesaturation) * 0.72 +
+        dayLift +
+        dayRelief +
+        2;
+      const dayG =
+        lerp(g, luma, dayDesaturation) * 0.72 +
+        dayLift +
+        dayRelief +
+        5;
+      const dayB =
+        lerp(b, luma, dayDesaturation) * 0.72 +
+        dayLift +
+        dayRelief +
+        10;
       const nighttimeAlpha = lerp(
         darkBodyOpacity,
         litOpacity,
         litSignal,
       );
-
-      data[pixelIndex] = lerp(r + atmosphericLift, skyTint[0], daylightBlend);
-      data[pixelIndex + 1] = lerp(
-        g + atmosphericLift,
-        skyTint[1],
-        daylightBlend,
+      const rawR = lerp(r + atmosphericLift, skyTint[0], daylightBlend);
+      const rawG = lerp(g + atmosphericLift, skyTint[1], daylightBlend);
+      const rawB = lerp(b + atmosphericLift, skyTint[2], daylightBlend);
+      const daylightAlphaSignal = clamp(
+        litSignal * 0.94 +
+          brightSignal * 0.16 +
+          terminatorTexture * 0.05 +
+          daylightLimbGlow * 0.08,
       );
-      data[pixelIndex + 2] = lerp(
-        b + atmosphericLift,
-        skyTint[2],
-        daylightBlend,
+      const daylightAlphaWeight = clamp(
+        daylightAlphaSignal *
+          (0.58 + look.moonOpacity * 0.28) *
+          (1 - smoothstep(0.99, 1, distance)),
+        0,
+        0.82,
+      );
+      const nightAlphaWeight =
+        Math.max(sourceCoverage, nightDiskSignal) *
+        clamp(nighttimeAlpha, 0, 1);
+
+      data[pixelIndex] = clamp(
+        lerp(rawR, dayR, daylightMaterial),
+        0,
+        255,
+      );
+      data[pixelIndex + 1] = clamp(
+        lerp(rawG, dayG, daylightMaterial),
+        0,
+        255,
+      );
+      data[pixelIndex + 2] = clamp(
+        lerp(rawB, dayB, daylightMaterial),
+        0,
+        255,
       );
       data[pixelIndex + 3] =
         255 *
         radialEdge *
-        alphaSignal *
-        clamp(lerp(daytimeAlpha, nighttimeAlpha, nightVisibility), 0, 1);
+        sourceCoverage *
+        lerp(daylightAlphaWeight, nightAlphaWeight, nightBodyBlend);
     }
   }
 
@@ -1126,9 +1268,11 @@ function drawForegroundClouds(
   const daylight = clamp((altitude + 4) / 50);
   const twilight = 1 - clamp(Math.abs(altitude + 4) / 20);
   const night = clamp((-altitude - 4) / 18);
-  const wind =
-    (timeOfDay / 24) * renderer.width * 1.65 +
-    (renderer.reduceMotion ? 0 : time * renderer.width * 0.006);
+  const foregroundVisibility = clamp(
+    0.16 + twilight * 0.58 + night * 0.72 + (1 - daylight) * 0.24,
+    0.16,
+    1,
+  );
   const cloudTint = lerpRGB(
     lerpRGB([226, 235, 239], [255, 226, 202], twilight * 0.34),
     [26, 32, 50],
@@ -1139,63 +1283,147 @@ function drawForegroundClouds(
     [14, 18, 32],
     night,
   );
-  const pad = renderer.width * 0.28;
-  const bandAlpha = 0.12 + daylight * 0.08 + twilight * 0.1 + night * 0.05;
+  const cloudWidth = Math.min(
+    520,
+    Math.max(280, Math.round(renderer.width / 3)),
+  );
+  const cloudHeight = Math.min(
+    320,
+    Math.max(170, Math.round(renderer.height / 3.2)),
+  );
+  const motionKey = renderer.reduceMotion ? 0 : Math.round(time * 8);
+  const cloudKey = [
+    cloudWidth,
+    cloudHeight,
+    timeOfDay.toFixed(2),
+    motionKey,
+    daylight.toFixed(2),
+    twilight.toFixed(2),
+    night.toFixed(2),
+    foregroundVisibility.toFixed(2),
+  ].join(":");
+
+  if (
+    renderer.cloudCanvas.width !== cloudWidth ||
+    renderer.cloudCanvas.height !== cloudHeight
+  ) {
+    renderer.cloudCanvas.width = cloudWidth;
+    renderer.cloudCanvas.height = cloudHeight;
+    renderer.cloudCacheKey = "";
+  }
+
+  if (renderer.cloudCacheKey !== cloudKey) {
+    const image = renderer.cloudCtx.createImageData(
+      cloudWidth,
+      cloudHeight,
+    );
+    const data = image.data;
+    const aspect = renderer.width / Math.max(renderer.height, 1);
+    const dayDrift =
+      timeOfDay * 0.065 + (renderer.reduceMotion ? 0 : time * 0.012);
+    const cloudStrength =
+      0.58 + daylight * 0.14 + twilight * 0.2 + night * 0.06;
+
+    for (let py = 0; py < cloudHeight; py += 1) {
+      const v = py / Math.max(cloudHeight - 1, 1);
+      const band =
+        smoothstep(0.05, 0.25, v) *
+        (1 - smoothstep(0.66, 0.92, v));
+      const moonBand = Math.exp(-Math.pow((v - 0.29) * 4.1, 2));
+
+      for (let px = 0; px < cloudWidth; px += 1) {
+        const u = px / Math.max(cloudWidth - 1, 1);
+        const streamX = u * aspect + v * 0.34;
+        const streamY = v - u * 0.05;
+        const broad = fbmNoise(
+          streamX * 2.2 + dayDrift,
+          streamY * 2.45 - dayDrift * 0.08,
+          17.5,
+        );
+        const torn = fbmNoise(
+          streamX * 5.8 - dayDrift * 0.42,
+          streamY * 5.1 + dayDrift * 0.16,
+          53.2,
+        );
+        const filament = fbmNoise(
+          streamX * 13.5 + dayDrift * 0.62,
+          streamY * 8.8,
+          91.4,
+        );
+        const cloudBody = broad * 0.72 + torn * 0.22 + filament * 0.06;
+        const eroded = cloudBody - (filament - 0.48) * 0.28;
+        const veil = smoothstep(0.42, 0.74, cloudBody);
+        const body = smoothstep(0.54, 0.78, eroded);
+        const edge =
+          smoothstep(0.46, 0.68, eroded) *
+          (1 - smoothstep(0.66, 0.86, eroded));
+        const strand =
+          smoothstep(0.66, 0.88, filament) *
+          smoothstep(0.38, 0.62, broad);
+        const alpha = clamp(
+          (veil * 0.024 + body * 0.13 + edge * 0.08 + strand * 0.052) *
+            band *
+            (0.48 + moonBand * 0.24) *
+            cloudStrength *
+            foregroundVisibility,
+          0,
+          0.13,
+        );
+        const colorMix = clamp(
+          0.62 + daylight * 0.12 + twilight * 0.08 + edge * 0.2,
+        );
+        const tint = lerpRGB(shadowTint, cloudTint, colorMix);
+        const pixelIndex = (py * cloudWidth + px) * 4;
+
+        data[pixelIndex] = tint[0];
+        data[pixelIndex + 1] = tint[1];
+        data[pixelIndex + 2] = tint[2];
+        data[pixelIndex + 3] = Math.round(alpha * 255);
+      }
+    }
+
+    renderer.cloudCtx.putImageData(image, 0, 0);
+    renderer.cloudCacheKey = cloudKey;
+  }
 
   ctx.save();
   ctx.globalCompositeOperation = "source-over";
-  ctx.filter = `blur(${Math.max(14, renderer.width * 0.012)}px)`;
+  ctx.imageSmoothingEnabled = true;
+  ctx.filter = `blur(${Math.max(1.5, renderer.width * 0.0012)}px)`;
+  ctx.drawImage(
+    renderer.cloudCanvas,
+    0,
+    0,
+    renderer.width,
+    renderer.height,
+  );
 
-  for (let index = 0; index < 9; index += 1) {
-    const seed = index * 97.31;
-    const travel = wind * (0.52 + index * 0.035);
-    const x =
-      ((index * renderer.width * 0.21 + travel + Math.sin(seed) * 160) %
-        (renderer.width + pad * 2)) -
-      pad;
-    const y =
-      renderer.height *
-      (0.08 + ((index * 0.115 + Math.sin(seed * 0.17) * 0.04) % 0.44));
-    const width =
-      renderer.width * (0.26 + 0.12 * Math.sin(seed * 0.41));
-    const height =
-      renderer.height * (0.035 + 0.028 * Math.cos(seed * 0.19));
-    const alpha =
-      bandAlpha * (0.38 + 0.25 * Math.sin(seed * 0.23)) *
-      (1 - clamp((y / renderer.height - 0.62) * 2));
-
-    ctx.beginPath();
-    ctx.fillStyle = rgb(index % 3 === 0 ? shadowTint : cloudTint, alpha);
-    ctx.ellipse(
-      x,
-      y,
-      Math.abs(width),
-      Math.abs(height),
-      Math.sin(seed) * 0.22,
-      0,
-      Math.PI * 2,
-    );
-    ctx.fill();
-  }
-
-  ctx.filter = `blur(${Math.max(22, renderer.width * 0.018)}px)`;
+  ctx.filter = `blur(${Math.max(10, renderer.width * 0.008)}px)`;
   const veilY =
     renderer.height *
-    (0.22 + 0.06 * Math.sin(timeOfDay * 0.7 + time * 0.02));
+    (0.22 + 0.04 * Math.sin(timeOfDay * 0.7 + time * 0.015));
   const veilGradient = ctx.createLinearGradient(
     0,
-    veilY - renderer.height * 0.12,
+    veilY - renderer.height * 0.16,
     renderer.width,
-    veilY + renderer.height * 0.16,
+    veilY + renderer.height * 0.14,
   );
   veilGradient.addColorStop(0, rgb(cloudTint, 0));
   veilGradient.addColorStop(
-    0.45,
-    rgb(cloudTint, 0.035 + daylight * 0.035 + twilight * 0.045),
+    0.5,
+    rgb(
+      cloudTint,
+      (0.008 + daylight * 0.009 + twilight * 0.014 + night * 0.006) *
+        foregroundVisibility,
+    ),
   );
   veilGradient.addColorStop(
-    0.66,
-    rgb(shadowTint, 0.025 + night * 0.045),
+    0.72,
+    rgb(
+      shadowTint,
+      (0.007 + twilight * 0.008 + night * 0.012) *
+        foregroundVisibility,
+    ),
   );
   veilGradient.addColorStop(1, rgb(cloudTint, 0));
   ctx.fillStyle = veilGradient;
@@ -1210,13 +1438,20 @@ function drawMoon(
 ) {
   const radius =
     Math.min(renderer.width, renderer.height) *
-    (renderer.width < 640 ? 0.16 : 0.13) *
+    (renderer.width < 640 ? 0.2 : 0.18) *
     visual.apparentScale;
   const moonX =
     renderer.width * (renderer.width < 640 ? 0.5 : MOON.x);
   const moonY =
     renderer.height * (renderer.width < 640 ? 0.28 : MOON.y);
   const svsReady = ensureSvsMoonImage(renderer, visual);
+  const svsPending =
+    visual.svsImageSrc !== null &&
+    renderer.moonSvsImageErrorSrc !== visual.svsImageSrc &&
+    !svsReady;
+
+  if (svsPending) return;
+
   const renderSource: MoonVisualSource = svsReady
     ? "nasa-svs-frame"
     : "nasa-lroc-texture";
@@ -1250,6 +1485,8 @@ function drawMoon(
   }
 
   const size = renderer.moonCanvas.width / MOON_TEXTURE_SCALE;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(
     renderer.moonCanvas,
     moonX - size / 2,
@@ -1285,6 +1522,7 @@ function AtmosphericScatteringBackground({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef(timeOfDay);
+  timeRef.current = timeOfDay;
 
   useEffect(() => {
     timeRef.current = timeOfDay;
@@ -1307,7 +1545,8 @@ function AtmosphericScatteringBackground({
     host.appendChild(canvas);
 
     if (!gl) {
-      return () => canvas.remove();
+      canvas.remove();
+      return;
     }
 
     const reduceMotion = window.matchMedia(
@@ -1470,12 +1709,14 @@ function AtmosphericScatteringBackground({
     );
 
     if (!vertexShader || !fragmentShader) {
-      return () => canvas.remove();
+      canvas.remove();
+      return;
     }
 
     const program = gl.createProgram();
     if (!program) {
-      return () => canvas.remove();
+      canvas.remove();
+      return;
     }
 
     gl.attachShader(program, vertexShader);
@@ -1486,7 +1727,8 @@ function AtmosphericScatteringBackground({
 
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       gl.deleteProgram(program);
-      return () => canvas.remove();
+      canvas.remove();
+      return;
     }
 
     const buffer = gl.createBuffer();
@@ -1560,7 +1802,8 @@ function AtmosphericScatteringBackground({
     };
 
     observer.observe(host);
-    frame = window.requestAnimationFrame(render);
+    resize();
+    render(performance.now());
 
     return () => {
       observer.disconnect();
@@ -1691,6 +1934,7 @@ export default function SkyMoonStudy() {
   const rendererRef = useRef<RendererState | null>(null);
   const settingsRef = useRef({
     sample: DEFAULT_MOON_SAMPLE,
+    moonSampleReady: false,
     timeOfDay: DEFAULT_TIME_OF_DAY,
     exploration: DEFAULT_EXPLORATION,
   });
@@ -1699,6 +1943,7 @@ export default function SkyMoonStudy() {
   const [moonSample, setMoonSample] = useState<MoonSample>(
     DEFAULT_MOON_SAMPLE,
   );
+  const [moonSampleReady, setMoonSampleReady] = useState(false);
   const [timeOfDay, setTimeOfDay] = useState(DEFAULT_TIME_OF_DAY);
   const [exploration, setExploration] =
     useState<ExplorationId>(DEFAULT_EXPLORATION);
@@ -1713,14 +1958,21 @@ export default function SkyMoonStudy() {
         return response.json() as Promise<MoonSample[]>;
       })
       .then((samples) => {
-        if (!isMounted || samples.length === 0) return;
-        setMoonSample(
-          samples[findNearestMoonSampleIndex(samples, new Date())],
-        );
+        if (!isMounted) return;
+
+        if (samples.length === 0) {
+          setMoonSample(DEFAULT_MOON_SAMPLE);
+        } else {
+          setMoonSample(
+            samples[findNearestMoonSampleIndex(samples, new Date())],
+          );
+        }
+        setMoonSampleReady(true);
       })
       .catch(() => {
         if (!isMounted) return;
         setMoonSample(DEFAULT_MOON_SAMPLE);
+        setMoonSampleReady(true);
       });
 
     return () => {
@@ -1742,7 +1994,11 @@ export default function SkyMoonStudy() {
     const moonTextureCtx = moonTextureCanvas.getContext("2d", {
       willReadFrequently: true,
     });
-    if (!moonCtx || !moonTextureCtx) return;
+    const cloudCanvas = document.createElement("canvas");
+    const cloudCtx = cloudCanvas.getContext("2d", {
+      willReadFrequently: true,
+    });
+    if (!moonCtx || !moonTextureCtx || !cloudCtx) return;
 
     rendererRef.current = {
       stars: [],
@@ -1753,6 +2009,9 @@ export default function SkyMoonStudy() {
       moonTextureCtx,
       moonTextureData: null,
       moonTextureVersion: 0,
+      cloudCanvas,
+      cloudCtx,
+      cloudCacheKey: "",
       moonCacheKey: "",
       moonSvsImage: null,
       moonSvsImageSrc: "",
@@ -1785,6 +2044,7 @@ export default function SkyMoonStudy() {
 
       const {
         sample,
+        moonSampleReady: currentMoonSampleReady,
         timeOfDay: currentTimeOfDay,
         exploration: currentExploration,
       } = settingsRef.current;
@@ -1805,7 +2065,9 @@ export default function SkyMoonStudy() {
       }
 
       drawStars(ctx, renderer, look, now / 1000);
-      drawMoon(ctx, renderer, moonVisual);
+      if (currentMoonSampleReady) {
+        drawMoon(ctx, renderer, moonVisual);
+      }
       if (!isCanvasSky(currentExploration)) {
         drawForegroundClouds(
           ctx,
@@ -1875,9 +2137,23 @@ export default function SkyMoonStudy() {
   const skyLabel = timeOfDayLabel(timeOfDay);
   const formattedTime = formatHour(timeOfDay);
   const timePercent = (timeOfDay / 24) * 100;
+  const fallbackMidSky = lerpRGB(currentLook.top, currentLook.horizon, 0.52);
+  const fallbackSkyStyle: CSSProperties = {
+    background: [
+      `linear-gradient(180deg,`,
+      `${rgb(currentLook.top)} 0%,`,
+      `${rgb(fallbackMidSky)} 58%,`,
+      `${rgb(currentLook.horizon)} 100%)`,
+    ].join(" "),
+  };
 
   useEffect(() => {
-    settingsRef.current = { sample: moonSample, timeOfDay, exploration };
+    settingsRef.current = {
+      sample: moonSample,
+      moonSampleReady,
+      timeOfDay,
+      exploration,
+    };
 
     const renderer = rendererRef.current;
     if (!renderer?.reduceMotion) return;
@@ -1898,20 +2174,31 @@ export default function SkyMoonStudy() {
       );
     }
     drawStars(ctx, renderer, currentLook, 0);
-    drawMoon(
-      ctx,
-      renderer,
-      createMoonVisualState(settingsRef.current.sample, currentLook),
-    );
+    if (moonSampleReady) {
+      drawMoon(
+        ctx,
+        renderer,
+        createMoonVisualState(settingsRef.current.sample, currentLook),
+      );
+    }
     if (!isCanvasSky(exploration)) {
       drawForegroundClouds(ctx, renderer, currentLook, timeOfDay, 0);
     }
-  }, [currentLook, exploration, moonSample, timeOfDay]);
+  }, [currentLook, exploration, moonSample, moonSampleReady, timeOfDay]);
 
   return (
     <main className="relative h-screen min-h-[620px] overflow-hidden bg-black text-[#24231f]">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={fallbackSkyStyle}
+      />
+
       {exploration === "atmospheric" ? (
-        <AtmosphericScatteringBackground timeOfDay={timeOfDay} />
+        <AtmosphericScatteringBackground
+          key={timeOfDay.toFixed(2)}
+          timeOfDay={timeOfDay}
+        />
       ) : null}
 
       <canvas
