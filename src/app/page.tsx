@@ -1,11 +1,11 @@
 "use client";
 
-import MoonBase from "@/components/ui/MoonCanvas";
+import MoonCanvas from "@/components/ui/MoonCanvas";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <MoonBase />
+    <main className="flex min-h-screen items-center justify-center bg-black">
+      <MoonCanvas />
     </main>
   );
 }
