@@ -100,6 +100,92 @@ body {
   font-family: var(--font-georgia), serif;
 }
 
+.sky-moon-range {
+  width: 100%;
+  height: 44px;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+  outline: none;
+}
+
+.sky-moon-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #24231f 0 var(--range-progress),
+    #d4d0c5 var(--range-progress) 100%
+  );
+}
+
+.sky-moon-range::-webkit-slider-thumb {
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  appearance: none;
+  border-radius: 999px;
+  background: #fffdf7;
+  box-shadow:
+    0 0 0 1px rgb(36 35 31 / 14%),
+    0 2px 6px rgb(36 35 31 / 18%);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.sky-moon-range:hover::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 1px rgb(36 35 31 / 18%),
+    0 3px 8px rgb(36 35 31 / 22%);
+}
+
+.sky-moon-range:active::-webkit-slider-thumb {
+  transform: scale(0.96);
+}
+
+.sky-moon-range:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 2px #f8f6ef,
+    0 0 0 4px #24231f,
+    0 2px 6px rgb(36 35 31 / 18%);
+}
+
+.sky-moon-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #24231f 0 var(--range-progress),
+    #d4d0c5 var(--range-progress) 100%
+  );
+}
+
+.sky-moon-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 999px;
+  background: #fffdf7;
+  box-shadow:
+    0 0 0 1px rgb(36 35 31 / 14%),
+    0 2px 6px rgb(36 35 31 / 18%);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.sky-moon-range:active::-moz-range-thumb {
+  transform: scale(0.96);
+}
+
+.sky-moon-range:focus-visible::-moz-range-thumb {
+  box-shadow:
+    0 0 0 2px #f8f6ef,
+    0 0 0 4px #24231f,
+    0 2px 6px rgb(36 35 31 / 18%);
+}
+
 @supports (-moz-appearance: none) {
   html,
   * {
