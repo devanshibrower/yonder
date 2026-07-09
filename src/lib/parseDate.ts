@@ -43,7 +43,10 @@ export function parseDate(
   if (text === "") return null;
 
   // Relative keywords, measured from `reference`.
-  if (["today", "tday"].includes(text)) return startOfDay(reference);
+  // "today" means this moment, so keep the reference's current time (the moon
+  // phase is time-of-day accurate). A specific calendar day below has no natural
+  // time, so those still use local midnight via startOfDay.
+  if (["today", "tday"].includes(text)) return reference;
   if (["tomorrow", "tmrw", "tom"].includes(text)) {
     const tomorrow = new Date(reference);
     tomorrow.setDate(tomorrow.getDate() + 1);

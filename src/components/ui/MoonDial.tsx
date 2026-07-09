@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import * as SunCalc from "suncalc";
 import { DateField } from "@/components/ui/DateField";
+import { MoonTimeline } from "@/components/ui/MoonTimeline";
 
 const CanvasSize = 320;
 
@@ -155,6 +156,15 @@ export default function MoonDial() {
         role="img"
         aria-label={moonLabel}
       />
+
+      {/* The wave timeline: another controlled view of the same `date`. Drag the
+          marker along the moon's illumination curve to pick a day; it slides
+          across the whole year. Same value/onChange contract as DateField, so
+          the two stay in sync. */}
+      <div className="w-140 max-w-full">
+        <MoonTimeline value={date} onChange={setDate} />
+      </div>
+
       <p>Illumination: {(illumination * 100).toFixed(2)}%</p>
       <p>Phase: {phase.toFixed(2)}</p>
     </div>
