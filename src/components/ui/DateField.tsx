@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatDate, parseDate } from "@/lib/parseDate";
 import * as Popover from "@radix-ui/react-popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -37,6 +37,17 @@ export function DateField({ value, onChange }: DateFieldProps) {
 
   // Parsed live on every render. Derived from `text`, so we compute it, not store it.
   const preview = parseDate(text);
+
+  // `text` only updates itself in response to THIS field's own commit/onSelect
+  // below. If `value` changes from outside — e.g. a sibling control like
+  // MoonTimeline sets the same date state directly — `text` would otherwise
+  // sit stale, showing a date that no longer matches what's actually driving
+  // the rest of the page. Resync whenever `value` changes, but skip while the
+  // popover is open so we don't overwrite an in-progress edit.
+  useEffect(() => {
+    if (open) return;
+    if (value) setText(formatDate(value));
+  }, [value, open]);
 
   // Commit the current draft to the parent if it parsed, otherwise do nothing.
   // Sends the Date up via onChange, tidies the input, and jumps the calendar

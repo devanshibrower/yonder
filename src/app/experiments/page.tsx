@@ -61,6 +61,12 @@ const groups: Group[] = [
         file: "src/components/ui/SkyMoonStudy.tsx",
         note: "Canvas atmosphere table, star fade, and procedural moon phase texture.",
       },
+      {
+        route: "/experiments/moon-sky",
+        title: "MoonSky",
+        file: "src/components/ui/MoonSky.tsx",
+        note: "SkyMoonStudy's moon + atmosphere renderer, driven by MoonDial's date picker. Real libration via astronomy-engine, no NASA sample fetch.",
+      },
     ],
   },
   {
